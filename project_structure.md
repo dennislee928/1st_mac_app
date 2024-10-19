@@ -5,7 +5,7 @@ HTTPMonitorApp/
 │ ├── tasks.json # 構建/編譯任務配置
 │ └── launch.json # 調試配置
 │
-├── HTTPMonitorApp/ # 主應用程式目錄
+├── monitor4you/ # 主應用程式目錄
 │ ├── Assets/ # 資源文件夾，例如圖標、圖片等
 │ ├── Models/ # 數據模型
 │ │ └── HTTPPacket.swift # 定義 HTTP 封包的 Swift 數據模型
