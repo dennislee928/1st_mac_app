@@ -63,7 +63,7 @@ export default function Home() {
           paddingBottom: "10px",
         }}
       >
-        安全日誌
+        過去30分鐘的cloudflare安全日誌
       </h2>
       {needsUpdate && (
         <div
@@ -84,7 +84,7 @@ export default function Home() {
               fontWeight: "600",
             }}
           >
-            有新的 IP 地址需要更新 WAF 規則。
+            有新的 IP 地址需要加入到 WAF 挑戰 規則 名單。
           </p>
           <button
             onClick={updateWAF}
