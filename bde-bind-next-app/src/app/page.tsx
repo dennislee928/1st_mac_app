@@ -102,6 +102,12 @@ export default function Home() {
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
       }}
     >
+      <h3>AI 建議</h3>
+      <ul>
+        {aiSuggestions.map((suggestion, index) => (
+          <li key={index}>{suggestion}</li>
+        ))}
+      </ul>
       <h2
         style={{
           color: "#000",
@@ -164,12 +170,6 @@ export default function Home() {
           >
             {ip}
           </li>
-        ))}
-      </ul>
-      <h3>AI 建議</h3>
-      <ul>
-        {aiSuggestions.map((suggestion, index) => (
-          <li key={index}>{suggestion}</li>
         ))}
       </ul>
     </div>
