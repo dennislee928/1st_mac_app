@@ -2,12 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-interface AIResponse {
-  result: {
-    response: string;
-  };
-}
-
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
@@ -61,8 +55,13 @@ export default function Home() {
       });
 
       if (response.ok) {
-        const data: AIResponse = await response.json();
-        setAiSuggestions(data.result.response.split("\n"));
+        const data: { result?: { response?: string } } = await response.json();
+        if (data.result && data.result.response) {
+          const suggestions = data.result.response.trim().split(/\n+/);
+          setAiSuggestions(suggestions);
+        } else {
+          console.error("No valid AI suggestions found in the response");
+        }
       } else {
         console.error(
           "Failed to fetch AI suggestions. Status:",
@@ -71,6 +70,10 @@ export default function Home() {
       }
     }
   }, []);
+  //
+  console.log("AI Suggestions Array:", aiSuggestions);
+
+  //
 
   useEffect(() => {
     handleFetchSuggestions();
@@ -80,7 +83,7 @@ export default function Home() {
     <div className="p-4 font-sans bg-gray-100 rounded-lg shadow-md">
       <h3 className="text-lg font-bold mb-4">AI 建議</h3>
       <ul>
-        {aiSuggestions.length > 0 ? (
+        {aiSuggestions && aiSuggestions.length > 0 ? (
           aiSuggestions.map((suggestion, index) => (
             <li key={index}>{suggestion}</li>
           ))
