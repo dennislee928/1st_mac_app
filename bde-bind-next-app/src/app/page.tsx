@@ -2,10 +2,19 @@
 
 import { useEffect, useState } from "react";
 
+interface AIResponse {
+  items: { score: number; label: string }[];
+}
+
+interface AIInput {
+  messages: { role: string; content: string }[];
+}
+
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   const fetchLogs = async () => {
     try {
@@ -16,6 +25,56 @@ export default function Home() {
       setNeedsUpdate(data.needsUpdate || false);
     } catch (error) {
       console.error("Failed to fetch logs:", error);
+    }
+  };
+
+  const runAIModel = async (
+    model: string,
+    input: AIInput
+  ): Promise<AIResponse> => {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/${model}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Auth-Email": process.env.CLOUDFLARE_EMAIL || "",
+          "X-Auth-API-Key": process.env.CLOUDFLARE_API_KEY || "",
+        },
+        method: "POST",
+        body: JSON.stringify(input),
+      }
+    );
+    const result: AIResponse = await response.json();
+    return result;
+  };
+
+  const fetchAISuggestions = async () => {
+    try {
+      const logResponse = await fetch("/api/fetch-logs");
+      const logData = await logResponse.json();
+
+      const input = {
+        messages: [
+          {
+            role: "system",
+            content: "You are a friendly assistant that helps write stories.",
+          },
+          {
+            role: "user",
+            content: `Based on the following logs, suggest improvements for WAF rules: ${JSON.stringify(
+              logData
+            )}`,
+          },
+        ],
+      };
+
+      const aiResponse = await runAIModel(
+        "@cf/meta/llama-3-8b-instruct",
+        input
+      );
+      setAiSuggestions(aiResponse.items.map((item) => item.label)); // 提取建議標籤
+    } catch (error) {
+      console.error("Error fetching AI suggestions:", error);
     }
   };
 
@@ -43,6 +102,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchLogs();
+    fetchAISuggestions(); // 在這裡調用 AI 建議函數
   }, []);
 
   return (
@@ -117,6 +177,12 @@ export default function Home() {
           >
             {ip}
           </li>
+        ))}
+      </ul>
+      <h3>AI 建議</h3>
+      <ul>
+        {aiSuggestions.map((suggestion, index) => (
+          <li key={index}>{suggestion}</li>
         ))}
       </ul>
     </div>

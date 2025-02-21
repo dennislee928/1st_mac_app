@@ -1,4 +1,4 @@
-// File: /Users/lipeichen/Documents/Cloudflare_Developer_Labs/bde-bind-next-app/src/app/layout.tsx
+// File: /Users/lipeichen/Documents/1st_mac_app/bde-bind-next-app/src/app/layout.tsx
 import * as entry from '../../../src/app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

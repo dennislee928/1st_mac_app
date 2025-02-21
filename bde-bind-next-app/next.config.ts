@@ -4,11 +4,6 @@ import { NextConfig } from "next";
 const nextConfig: NextConfig = {
   distDir: ".next", // 確保這裡的輸出目錄正確
   // 其他配置...
-};
-
-export default nextConfig; // 將 nextConfig 導出
-
-module.exports = {
   async rewrites() {
     return [
       {
@@ -24,3 +19,5 @@ module.exports = {
     ];
   },
 };
+
+export default nextConfig; // 將 nextConfig 導出
