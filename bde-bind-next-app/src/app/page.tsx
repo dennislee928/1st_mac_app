@@ -94,6 +94,8 @@ export default function Home() {
     setAiSuggestions(newAISuggestions);
   }, [handleFetchSuggestions]);
 
+  console.log(aiSuggestions);
+  //
   return (
     <div
       style={{
@@ -106,9 +108,13 @@ export default function Home() {
     >
       <h3>AI 建議</h3>
       <ul>
-        {aiSuggestions.map((suggestion: string, index: number) => (
-          <li key={index}>{suggestion}</li>
-        ))}
+        {aiSuggestions.length > 0 ? (
+          aiSuggestions.map((suggestion, index) => (
+            <li key={index}>{suggestion}</li>
+          ))
+        ) : (
+          <li>No AI suggestions available</li>
+        )}
       </ul>
       <h2
         style={{
