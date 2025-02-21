@@ -1,17 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Footer from "../components/footer";
 
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState(25);
+  const [countdown, setCountdown] = useState(10);
 
-  // 呼叫後端 API 取得安全日誌和 AI 建議
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetchLogs = async () => {
     try {
       const response = await fetch("/api/fetch-logs");
@@ -23,15 +20,8 @@ export default function Home() {
       setIps(data.ips || []);
       setNeedsUpdate(data.needsUpdate || false);
       if (data.aiSuggestions) {
-        // 將 AI 建議依行拆分
         const suggestions = data.aiSuggestions.trim().split(/\n+/);
-        // 將每一行建議翻譯成繁體中文
-        const translated = await Promise.all(
-          suggestions.map(async (line) => {
-            return await translateText(line);
-          })
-        );
-        setAiSuggestions(translated);
+        setAiSuggestions(suggestions);
       } else {
         console.error("No valid AI suggestions found in the response");
       }
@@ -40,7 +30,6 @@ export default function Home() {
     }
   };
 
-  // 更新 WAF 規則的函式（不變）
   const updateWAF = async () => {
     setUpdating(true);
     try {
@@ -49,11 +38,12 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ips }),
       });
+
       if (response.ok) {
-        alert("WAF 規則更新成功。");
+        alert("WAF rules updated successfully.");
         setNeedsUpdate(false);
       } else {
-        alert("更新 WAF 規則失敗。");
+        alert("Failed to update WAF rules.");
       }
     } catch (error) {
       console.error("Error updating WAF:", error);
@@ -62,29 +52,13 @@ export default function Home() {
     }
   };
 
-  // 翻譯函式，呼叫 /api/translate
-  async function translateText(text: string): Promise<string> {
-    try {
-      const response = await fetch("/api/translate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, targetLang: "zh-TW" }),
-      });
-      const data = (await response.json()) as { translatedText: string };
-      return data.translatedText;
-    } catch (error) {
-      console.error("翻譯錯誤:", error);
-      return text; // 若翻譯失敗則回傳原文
-    }
-  }
-
   useEffect(() => {
     fetchLogs();
     const interval = setInterval(() => {
       setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(interval);
-  }, [fetchLogs]);
+  }, []);
 
   console.log("AI Suggestions Array:", aiSuggestions);
 
@@ -92,27 +66,22 @@ export default function Home() {
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <div className="p-8 bg-white border-4 border-indigo-500 rounded-xl shadow-lg mb-8">
         <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
-          AI 建議 (AI Suggestions) ，請查看下方ollama
-          ai的資安規則調整建議，一鍵更新請按下 &quot;更新 WAF&quot;
-          按鈕部署規則， 若無建議，則區間內無相關攻擊事件，請稍後再查看。
+          AI 建議 (AI Suggestions)
         </h3>
-        <ul className="space-y-4">
+        <div className="overflow-y-auto max-h-96 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-inner">
           {aiSuggestions && aiSuggestions.length > 0 ? (
             aiSuggestions.map((suggestion, index) => (
-              <li
-                key={index}
-                className="p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-sm"
-              >
+              <p key={index} className="mb-2 text-gray-800">
                 {suggestion}
-              </li>
+              </p>
             ))
           ) : (
-            <li className="text-gray-500 text-xl">
-              因直接對LLM做分析請求，耗時較長，，請等待 {countdown}{" "}
-              秒，獲取生成式資安建議 ..
-            </li>
+            <p className="text-gray-500 text-xl">
+              No AI suggestions available, please wait for {countdown}{" "}
+              seconds...
+            </p>
           )}
-        </ul>
+        </div>
       </div>
 
       <h2 className="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">
@@ -142,7 +111,6 @@ export default function Home() {
           </li>
         ))}
       </ul>
-      <Footer />
     </div>
   );
 }
