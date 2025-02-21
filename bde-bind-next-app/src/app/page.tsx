@@ -55,9 +55,9 @@ export default function Home() {
       });
 
       if (response.ok) {
-        const data: { result?: { response?: string } } = await response.json();
-        if (data.result && data.result.response) {
-          const suggestions = data.result.response.trim().split(/\n+/);
+        const data: { aiSuggestions?: string } = await response.json();
+        if (data.aiSuggestions) {
+          const suggestions = data.aiSuggestions.trim().split(/\n+/);
           setAiSuggestions(suggestions);
         } else {
           console.error("No valid AI suggestions found in the response");
@@ -70,10 +70,8 @@ export default function Home() {
       }
     }
   }, []);
-  //
-  console.log("AI Suggestions Array:", aiSuggestions);
 
-  //
+  console.log("AI Suggestions Array:", aiSuggestions);
 
   useEffect(() => {
     handleFetchSuggestions();
