@@ -90,6 +90,8 @@ export default function Home() {
 
   useEffect(() => {
     handleFetchSuggestions();
+    const newAISuggestions = ["AI 建議內容"];
+    setAiSuggestions(newAISuggestions);
   }, [handleFetchSuggestions]);
 
   return (
@@ -104,7 +106,7 @@ export default function Home() {
     >
       <h3>AI 建議</h3>
       <ul>
-        {aiSuggestions.map((suggestion, index) => (
+        {aiSuggestions.map((suggestion: string, index: number) => (
           <li key={index}>{suggestion}</li>
         ))}
       </ul>
