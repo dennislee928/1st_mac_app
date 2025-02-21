@@ -58,7 +58,7 @@ export default function Home() {
           },
           {
             role: "user",
-            content: `Based on the following logs, suggest improvements for WAF rules: ${JSON.stringify(
+            content: `Make professional security suggestions based on the following logs: ${JSON.stringify(
               logData
             )}`,
           },
@@ -71,7 +71,7 @@ export default function Home() {
         body: JSON.stringify(input),
       });
 
-      const responseData = await aiResponse.json(); // 獲取響應數據
+      const responseData: AIResponse = await aiResponse.json(); // 指定 responseData 的類型
 
       // 提取 AI 回應中的文字
       const aiText =
