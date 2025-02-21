@@ -7,6 +7,7 @@ export default function Home() {
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [countdown, setCountdown] = useState(10);
 
   const fetchLogs = async () => {
     try {
@@ -53,31 +54,41 @@ export default function Home() {
 
   useEffect(() => {
     fetchLogs();
+    const interval = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   console.log("AI Suggestions Array:", aiSuggestions);
 
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
-      <h3 className="text-2xl font-extrabold mb-6 text-indigo-700">
-        AI instructions
-      </h3>
-      <ul className="space-y-2 mb-8">
-        {aiSuggestions && aiSuggestions.length > 0 ? (
-          aiSuggestions.map((suggestion, index) => (
-            <li
-              key={index}
-              className="p-3 bg-white rounded-md shadow-sm hover:bg-indigo-50"
-            >
-              {suggestion}
+      <div className="p-8 bg-white border-4 border-indigo-500 rounded-xl shadow-lg mb-8">
+        <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
+          AI 建議 (AI Suggestions) ，請查看下方ollama
+          ai的資安規則調整建議，一鍵更新請按下“更新 WAF ”按鈕 部署規則， 若無
+          建議，則區間內無相關攻擊事件，請稍後再查看。
+        </h3>
+        <ul className="space-y-4">
+          {aiSuggestions && aiSuggestions.length > 0 ? (
+            aiSuggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                className="p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-sm"
+              >
+                {suggestion}
+              </li>
+            ))
+          ) : (
+            <li className="text-gray-500 text-xl">
+              No AI suggestions available, please wait for {countdown}{" "}
+              seconds...
             </li>
-          ))
-        ) : (
-          <li className="text-gray-500">
-            No AI suggestions available, now please wait for a moment.
-          </li>
-        )}
-      </ul>
+          )}
+        </ul>
+      </div>
+
       <h2 className="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">
         過去30分鐘的 Cloudflare 安全日誌
       </h2>
