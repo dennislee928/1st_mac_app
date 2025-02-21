@@ -7,7 +7,7 @@ export default function Home() {
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(15);
 
   const fetchLogs = async () => {
     try {
@@ -67,8 +67,8 @@ export default function Home() {
       <div className="p-8 bg-white border-4 border-indigo-500 rounded-xl shadow-lg mb-8">
         <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
           AI 建議 (AI Suggestions) ，請查看下方ollama
-          ai的資安規則調整建議，一鍵更新請按下“更新 WAF ”按鈕 部署規則， 若無
-          建議，則區間內無相關攻擊事件，請稍後再查看。
+          ai的資安規則調整建議，一鍵更新請按下&quot;更新 WAF &quot;按鈕
+          部署規則， 若無 建議，則區間內無相關攻擊事件，請稍後再查看。
         </h3>
         <ul className="space-y-4">
           {aiSuggestions && aiSuggestions.length > 0 ? (
