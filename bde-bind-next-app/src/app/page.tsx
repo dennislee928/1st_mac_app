@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 interface ErrorDetail {
   message: string; // 錯誤信息
   code?: string; // 可選的錯誤代碼
 }
+const CF_AUTH_MAIL = process.env.CF_AUTH_MAIL || "";
+const CF_AUTH_KEY = process.env.CF_AUTH_KEY || "";
 
 interface AIResponse {
   result: {
@@ -22,18 +24,19 @@ interface AIResponse {
 
 interface AIInput {
   messages: { role: string; content: string }[];
+  ips?: string[]; // 添加 ips 屬性
 }
 
-interface LogData {
-  ips?: string[];
-  needsUpdate?: boolean;
-}
+//interface LogData {
+//ips?: string[];
+//needsUpdate?: boolean;
+//}
 
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [aiSuggestions] = useState<string[]>([]);
 
   const fetchLogs = async () => {
     try {
@@ -48,35 +51,29 @@ export default function Home() {
     }
   };
 
-  const fetchAISuggestions = async (logData: LogData) => {
+  const fetchAISuggestions = async (input: AIInput) => {
     try {
-      const input: AIInput = {
-        messages: [
-          {
-            role: "system",
-            content: "You are a friendly assistant that helps write stories.",
+      const response = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct`,
+        {
+          method: "POST",
+          headers: {
+            "X-Auth-Email": CF_AUTH_MAIL,
+            "X-Auth-Key": CF_AUTH_KEY,
+            "Content-Type": "application/json",
           },
-          {
-            role: "user",
-            content: `Make professional security suggestions based on the following logs: ${JSON.stringify(
-              logData
-            )}`,
-          },
-        ],
-      };
+          body: JSON.stringify(input),
+        }
+      );
 
-      const aiResponse = await fetch("/api/fetch-ai-suggestions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to fetch AI suggestions:", errorData);
+        throw new Error("Failed to fetch AI suggestions");
+      }
 
-      const responseData: AIResponse = await aiResponse.json(); // 指定 responseData 的類型
-
-      // 提取 AI 回應中的文字
-      const aiText =
-        responseData.result.response || "No suggestions available.";
-      setAiSuggestions([aiText]); // 將提取的文字設置為建議
+      const responseData: AIResponse = await response.json(); // 使用 AIResponse
+      return responseData;
     } catch (error) {
       console.error("Error fetching AI suggestions:", error);
     }
@@ -104,16 +101,16 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const logData = await fetchLogs(); // 獲取日誌數據
-      if (logData) {
-        await fetchAISuggestions(logData); // 將日誌數據傳遞給 AI 建議函數
-      }
-    };
-
-    fetchData();
+  const handleFetchSuggestions = useCallback(async () => {
+    const { ips = [], needsUpdate = false } = (await fetchLogs()) || {};
+    if (needsUpdate) {
+      await fetchAISuggestions({ messages: [], ips }); // 將日誌數據傳遞給安全建議函數
+    }
   }, []);
+
+  useEffect(() => {
+    handleFetchSuggestions();
+  }, [handleFetchSuggestions]);
 
   return (
     <div
