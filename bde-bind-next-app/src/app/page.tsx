@@ -1,31 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 
-interface ErrorDetail {
-  message: string; // 錯誤信息
-  code?: string; // 可選的錯誤代碼
-}
-const CF_AUTH_MAIL = process.env.CF_AUTH_MAIL || "";
-const CF_AUTH_KEY = process.env.CF_AUTH_KEY || "";
-
-interface AIResponse {
-  result: {
-    response: string;
-    usage: {
-      prompt_tokens: number;
-      completion_tokens: number;
-      total_tokens: number;
-    };
-    success: boolean;
-    errors: ErrorDetail[]; // 使用具體的 ErrorDetail 類型
-  };
-}
-
-interface AIInput {
-  messages: { role: string; content: string }[];
-  ips?: string[]; // 添加 ips 屬性
-}
+//const CF_AUTH_MAIL = process.env.CF_AUTH_MAIL || "";
+//const CF_AUTH_KEY = process.env.CF_AUTH_KEY || "";
 
 //interface LogData {
 //ips?: string[];
@@ -36,7 +15,7 @@ export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [aiSuggestions] = useState<string[]>([]);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
   const fetchLogs = async () => {
     try {
@@ -48,34 +27,6 @@ export default function Home() {
       return data; // 返回日誌數據
     } catch (error) {
       console.error("Failed to fetch logs:", error);
-    }
-  };
-
-  const fetchAISuggestions = async (input: AIInput) => {
-    try {
-      const response = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct`,
-        {
-          method: "POST",
-          headers: {
-            "X-Auth-Email": CF_AUTH_MAIL,
-            "X-Auth-Key": CF_AUTH_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(input),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Failed to fetch AI suggestions:", errorData);
-        throw new Error("Failed to fetch AI suggestions");
-      }
-
-      const responseData: AIResponse = await response.json(); // 使用 AIResponse
-      return responseData;
-    } catch (error) {
-      console.error("Error fetching AI suggestions:", error);
     }
   };
 
@@ -104,7 +55,20 @@ export default function Home() {
   const handleFetchSuggestions = useCallback(async () => {
     const { ips = [], needsUpdate = false } = (await fetchLogs()) || {};
     if (needsUpdate) {
-      await fetchAISuggestions({ messages: [], ips }); // 將日誌數據傳遞給安全建議函數
+      const response = await fetch("/fetch-ai-suggestions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ips }), // 將 IP 數據發送到 Workers
+      });
+
+      if (response.ok) {
+        const data: string = await response.json();
+        setAiSuggestions(data.split("\n"));
+      } else {
+        console.error("Failed to fetch AI suggestions");
+      }
     }
   }, []);
 
