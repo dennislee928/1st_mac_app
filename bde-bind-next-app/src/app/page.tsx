@@ -64,8 +64,12 @@ export default function Home() {
       });
 
       if (response.ok) {
-        const data: string = await response.json();
-        setAiSuggestions(data.split("\n"));
+        const data = await response.json();
+        if (typeof data === "string") {
+          setAiSuggestions(data.split("\n"));
+        } else {
+          console.error("Unexpected data format");
+        }
       } else {
         console.error("Failed to fetch AI suggestions");
       }
