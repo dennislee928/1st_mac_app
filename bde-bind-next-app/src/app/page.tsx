@@ -65,16 +65,17 @@ export default function Home() {
         ],
       };
 
-      const response = await fetch("/api/fetch-ai-suggestions", {
+      const aiResponse = await fetch("/api/fetch-ai-suggestions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
 
-      const aiResponse: AIResponse = await response.json();
+      const responseData = await aiResponse.json(); // 獲取響應數據
 
       // 提取 AI 回應中的文字
-      const aiText = aiResponse.result.response || "No suggestions available.";
+      const aiText =
+        responseData.result.response || "No suggestions available.";
       setAiSuggestions([aiText]); // 將提取的文字設置為建議
     } catch (error) {
       console.error("Error fetching AI suggestions:", error);
