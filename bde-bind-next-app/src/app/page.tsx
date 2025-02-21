@@ -58,37 +58,49 @@ export default function Home() {
   console.log("AI Suggestions Array:", aiSuggestions);
 
   return (
-    <div className="p-4 font-sans bg-gray-100 rounded-lg shadow-md">
-      <h3 className="text-lg font-bold mb-4">AI 建議</h3>
-      <ul>
+    <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
+      <h3 className="text-2xl font-extrabold mb-6 text-indigo-700">
+        AI instructions
+      </h3>
+      <ul className="space-y-2 mb-8">
         {aiSuggestions && aiSuggestions.length > 0 ? (
           aiSuggestions.map((suggestion, index) => (
-            <li key={index}>{suggestion}</li>
+            <li
+              key={index}
+              className="p-3 bg-white rounded-md shadow-sm hover:bg-indigo-50"
+            >
+              {suggestion}
+            </li>
           ))
         ) : (
-          <li>No AI suggestions available, now please wait for a moment.</li>
+          <li className="text-gray-500">
+            No AI suggestions available, now please wait for a moment.
+          </li>
         )}
       </ul>
-      <h2 className="text-xl font-bold border-b pb-2 mb-4">
+      <h2 className="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">
         過去30分鐘的 Cloudflare 安全日誌
       </h2>
       {needsUpdate && (
-        <div className="mb-4 p-4 border rounded bg-white shadow">
-          <p className="text-red-600 font-semibold">
+        <div className="mb-6 p-5 border-2 border-red-200 rounded-lg bg-red-50 shadow-md">
+          <p className="text-red-600 font-semibold mb-4">
             有新的 IP 地址需要加入到 WAF 挑戰 規則 名單。
           </p>
           <button
             onClick={updateWAF}
             disabled={updating}
-            className="mt-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+            className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200"
           >
             {updating ? "更新中..." : "更新 WAF"}
           </button>
         </div>
       )}
-      <ul className="list-none p-0">
+      <ul className="list-none space-y-2">
         {ips.map((ip, index) => (
-          <li key={index} className="py-2 border-b text-gray-600">
+          <li
+            key={index}
+            className="p-3 bg-white rounded-md shadow-sm text-gray-700"
+          >
             {ip}
           </li>
         ))}
