@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
         destination:
           "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/update-waf",
       },
+      {
+        source: "/api/fetch-ai-suggestions",
+        destination:
+          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/fetch-ai-suggestions", // 這裡是 API 路由
+      },
     ];
   },
 };

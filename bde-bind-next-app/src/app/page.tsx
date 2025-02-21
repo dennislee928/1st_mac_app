@@ -53,7 +53,7 @@ export default function Home() {
       const logResponse = await fetch("/api/fetch-logs");
       const logData = await logResponse.json();
 
-      const input = {
+      const input: AIInput = {
         messages: [
           {
             role: "system",
