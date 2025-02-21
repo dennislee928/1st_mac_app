@@ -10,6 +10,12 @@ import { useEffect, useState, useCallback } from "react";
 //needsUpdate?: boolean;
 //}
 
+interface AIResponse {
+  result: {
+    response: string;
+  };
+}
+
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
@@ -63,12 +69,8 @@ export default function Home() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (typeof data === "string") {
-          setAiSuggestions(data.split("\n"));
-        } else {
-          console.error("Unexpected data format:", data);
-        }
+        const data: AIResponse = await response.json();
+        setAiSuggestions(data.result.response.split("\n"));
       } else {
         let errorData;
         try {
