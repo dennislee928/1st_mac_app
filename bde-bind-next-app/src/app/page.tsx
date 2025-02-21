@@ -57,8 +57,11 @@ export default function Home() {
         body: JSON.stringify(input),
       });
 
-      const aiResponse: AIResponse = await response.json();
-      setAiSuggestions(aiResponse.items.map((item) => item.label)); // 提取建議標籤
+      const aiResponse = await response.json();
+
+      // 提取 AI 回應中的文字
+      const aiText = aiResponse.result.response || "No suggestions available.";
+      setAiSuggestions([aiText]); // 將提取的文字設置為建議
     } catch (error) {
       console.error("Error fetching AI suggestions:", error);
     }
