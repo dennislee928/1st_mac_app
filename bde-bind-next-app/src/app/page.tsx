@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
@@ -11,11 +11,19 @@ export default function Home() {
   const fetchLogs = async () => {
     try {
       const response = await fetch("/api/fetch-logs");
-      const data: { ips?: string[]; needsUpdate?: boolean } =
-        await response.json();
+      const data: {
+        ips?: string[];
+        needsUpdate?: boolean;
+        aiSuggestions?: string;
+      } = await response.json();
       setIps(data.ips || []);
       setNeedsUpdate(data.needsUpdate || false);
-      return data;
+      if (data.aiSuggestions) {
+        const suggestions = data.aiSuggestions.trim().split(/\n+/);
+        setAiSuggestions(suggestions);
+      } else {
+        console.error("No valid AI suggestions found in the response");
+      }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
     }
@@ -43,39 +51,11 @@ export default function Home() {
     }
   };
 
-  const handleFetchSuggestions = useCallback(async () => {
-    const { ips = [], needsUpdate = false } = (await fetchLogs()) || {};
-    if (needsUpdate) {
-      const response = await fetch("/api/fetch-ai-suggestions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ips }),
-      });
-
-      if (response.ok) {
-        const data: { aiSuggestions?: string } = await response.json();
-        if (data.aiSuggestions) {
-          const suggestions = data.aiSuggestions.trim().split(/\n+/);
-          setAiSuggestions(suggestions);
-        } else {
-          console.error("No valid AI suggestions found in the response");
-        }
-      } else {
-        console.error(
-          "Failed to fetch AI suggestions. Status:",
-          response.status
-        );
-      }
-    }
+  useEffect(() => {
+    fetchLogs();
   }, []);
 
   console.log("AI Suggestions Array:", aiSuggestions);
-
-  useEffect(() => {
-    handleFetchSuggestions();
-  }, [handleFetchSuggestions]);
 
   return (
     <div className="p-4 font-sans bg-gray-100 rounded-lg shadow-md">
@@ -86,7 +66,7 @@ export default function Home() {
             <li key={index}>{suggestion}</li>
           ))
         ) : (
-          <li>No AI suggestions available</li>
+          <li>No AI suggestions available, now please wait for a moment.</li>
         )}
       </ul>
       <h2 className="text-xl font-bold border-b pb-2 mb-4">
