@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Footer from "../components/footer";
 
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
@@ -116,6 +117,7 @@ export default function Home() {
           </li>
         ))}
       </ul>
+      <Footer />
     </div>
   );
 }
