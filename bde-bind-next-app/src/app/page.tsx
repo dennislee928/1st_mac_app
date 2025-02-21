@@ -68,10 +68,21 @@ export default function Home() {
         if (typeof data === "string") {
           setAiSuggestions(data.split("\n"));
         } else {
-          console.error("Unexpected data format");
+          console.error("Unexpected data format:", data);
         }
       } else {
-        console.error("Failed to fetch AI suggestions");
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (error) {
+          console.error("Failed to parse error response:", error);
+        }
+        console.error(
+          "Failed to fetch AI suggestions. Status:",
+          response.status,
+          "Error:",
+          errorData ?? "No error data"
+        );
       }
     }
   }, []);
