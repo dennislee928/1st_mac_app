@@ -2,8 +2,22 @@
 
 import { useEffect, useState } from "react";
 
+interface ErrorDetail {
+  message: string; // 錯誤信息
+  code?: string; // 可選的錯誤代碼
+}
+
 interface AIResponse {
-  items: { score: number; label: string }[];
+  result: {
+    response: string;
+    usage: {
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+    };
+    success: boolean;
+    errors: ErrorDetail[]; // 使用具體的 ErrorDetail 類型
+  };
 }
 
 interface AIInput {
@@ -57,7 +71,7 @@ export default function Home() {
         body: JSON.stringify(input),
       });
 
-      const aiResponse = await response.json();
+      const aiResponse: AIResponse = await response.json();
 
       // 提取 AI 回應中的文字
       const aiText = aiResponse.result.response || "No suggestions available.";
