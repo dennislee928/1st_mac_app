@@ -187,7 +187,7 @@ export default function Home() {
           disabled={updating}
           className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
         >
-          點選此鈕獲取最新的 AI 建議
+          點選此鈕獲取最新的ollama回應
         </button>
         <br />
         <br />
@@ -228,9 +228,7 @@ export default function Home() {
                 : "Add All Recognized IPs to WAF"
             }
           >
-            {updating
-              ? "更新中..."
-              : "強制更新已辨識的 IP 地址，防止ollama回應格式錯誤"}
+            {updating ? "更新中..." : "接受所有 AI 建議"}
           </button>
 
           <br />
