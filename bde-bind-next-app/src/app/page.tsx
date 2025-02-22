@@ -1,32 +1,46 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const [, setIps] = useState<string[]>([]);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState(30);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
   const [blockIps, setBlockIps] = useState<string[]>([]);
   const [challengeIps, setChallengeIps] = useState<string[]>([]);
   const [allRecognizedIps, setAllRecognizedIps] = useState<string[]>([]);
-
+  // Ref to hold interval ID
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    console.log("Component mounted");
-    return () => {
-      console.log("Component will unmount");
+    const fetchLogs = async () => {
+      try {
+        const response = await fetch("/api/fetch-logs");
+        const data: { aiSuggestions?: string[] } = await response.json(); // Explicit typing
+        if (response.ok) {
+          setAiSuggestions(data.aiSuggestions || []);
+        } else {
+          console.error("Failed to fetch logs:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching logs:", error);
+      }
     };
+
+    fetchLogs();
   }, []);
 
   const startCountdown = () => {
     setCountdown(30);
-    const interval = setInterval(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
       setCountdown((prev) => {
-        if (prev > 1) {
+        if (prev && prev > 1) {
           return prev - 1;
         } else {
-          clearInterval(interval);
+          if (intervalRef.current) clearInterval(intervalRef.current);
           return 0;
         }
       });
@@ -74,6 +88,9 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
+    } finally {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setCountdown(null);
     }
   };
 
@@ -111,24 +128,35 @@ export default function Home() {
         onClick={fetchLogs}
         className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg"
       >
-        Fetch AI Suggestions
+        Start Countdown
       </button>
 
       {showAISuggestions && (
-        <div>
-          <h4>Valid IPs from AI Suggestions (ollama)for WAF Update:</h4>
-          <ul>
-            {allRecognizedIps.map((ip, index) => (
-              <li key={index}>{ip}</li>
-            ))}
-          </ul>
-          <button
-            onClick={() => updateWAF(allRecognizedIps)}
-            disabled={updating || allRecognizedIps.length === 0}
-            className="px-5 py-2 bg-blue-500 text-white font-bold rounded-lg mt-4"
-          >
-            {updating ? "Updating WAF..." : "Update WAF with Valid IPs"}
-          </button>
+        <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
+          <h4 className="text-2xl font-semibold mb-2">AI Suggestions:</h4>
+          <div className="text-lg text-gray-800">
+            {aiSuggestions ? (
+              <p>{aiSuggestions}</p>
+            ) : (
+              <p>No AI suggestions available.</p>
+            )}
+          </div>
+        </div>
+      )}
+      <button
+        onClick={() => updateWAF(allRecognizedIps)}
+        disabled={updating || allRecognizedIps.length === 0}
+        className={`mt-4 px-5 py-2 font-bold rounded-lg shadow-md transition-all duration-200 ${
+          updating || allRecognizedIps.length === 0
+            ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+            : "bg-blue-500 text-white hover:bg-blue-600"
+        }`}
+      >
+        {updating ? "Updating WAF..." : "Update WAF with Valid IPs"}
+      </button>
+      {countdown !== null && (
+        <div className="countdown mt-4 text-red-600 font-semibold">
+          Countdown: {countdown} seconds
         </div>
       )}
     </div>
