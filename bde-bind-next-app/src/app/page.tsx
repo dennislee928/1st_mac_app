@@ -124,6 +124,7 @@ export default function Home() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateWAFBlocking = async () => {
     if (blockIps.length === 0) {
       alert("No IPs available for WAF blocking rules.");
@@ -149,6 +150,7 @@ export default function Home() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateWAFChallenge = async () => {
     if (challengeIps.length === 0) {
       alert("No challenge IPs available for WAF rules.");
@@ -230,23 +232,10 @@ export default function Home() {
               ? "更新中..."
               : "強制更新已辨識的 IP 地址，防止ollama回應格式錯誤"}
           </button>
-          <button
-            onClick={updateWAFBlocking}
-            disabled={updating || blockIps.length === 0}
-            className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
-          >
-            {updating ? "更新中..." : "更新 WAF (Blocking)"}
-          </button>{" "}
+
           <br />
           <br />
           <br />
-          <button
-            onClick={updateWAFChallenge}
-            disabled={updating || challengeIps.length === 0}
-            className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200"
-          >
-            {updating ? "Updating..." : "更新WAF (Challenge) 規則"}
-          </button>
         </div>
       )}
 
