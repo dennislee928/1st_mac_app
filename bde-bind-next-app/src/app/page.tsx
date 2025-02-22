@@ -99,8 +99,8 @@ export default function Home() {
     }
   };
 
-  const updateWAF = async () => {
-    if (challengeIps.length === 0) {
+  const updateWAF = async (ips: string[]) => {
+    if (ips.length === 0) {
       alert("No IPs available for WAF challenge rules.");
       return;
     }
@@ -109,7 +109,7 @@ export default function Home() {
       const response = await fetch("/api/update-waf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ips: challengeIps }),
+        body: JSON.stringify({ ips }),
       });
 
       if (response.ok) {
@@ -144,6 +144,31 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error updating WAF blocking rules:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const updateWAFChallenge = async () => {
+    if (challengeIps.length === 0) {
+      alert("No challenge IPs available for WAF rules.");
+      return;
+    }
+    setUpdating(true);
+    try {
+      const response = await fetch("/api/update-waf-challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ips: challengeIps }),
+      });
+
+      if (response.ok) {
+        alert("WAF challenge rules updated successfully.");
+      } else {
+        alert("Failed to update WAF challenge rules.");
+      }
+    } catch (error) {
+      console.error("Error updating WAF challenge rules:", error);
     } finally {
       setUpdating(false);
     }
@@ -188,11 +213,20 @@ export default function Home() {
             有新的 IP 地址需要加入到 WAF 規則 名單。
           </p>
           <button
-            onClick={updateWAF}
-            disabled={updating || challengeIps.length === 0}
-            className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200 mr-4"
+            onClick={() => updateWAF(allRecognizedIps)}
+            disabled={updating || allRecognizedIps.length === 0}
+            className={`px-5 py-2 font-bold rounded-lg shadow-md transition-all duration-200 mr-4 ${
+              updating || allRecognizedIps.length === 0
+                ? "bg-gray-400 text-gray-700 cursor-not-allowed"
+                : "bg-red-500 text-white hover:bg-red-600"
+            }`}
+            title={
+              updating || allRecognizedIps.length === 0
+                ? "Unclickable due to parsing issue"
+                : "Add All Recognized IPs to WAF"
+            }
           >
-            {updating ? "更新中..." : "更新 WAF (Challenge)"}
+            {updating ? "更新中..." : "Add All Recognized IPs to WAF"}
           </button>
           <button
             onClick={updateWAFBlocking}
@@ -200,6 +234,18 @@ export default function Home() {
             className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
           >
             {updating ? "更新中..." : "更新 WAF (Blocking)"}
+          </button>{" "}
+          <br />
+          <br />
+          <br />
+          <button
+            onClick={updateWAFChallenge}
+            disabled={updating || challengeIps.length === 0}
+            className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200"
+          >
+            {updating
+              ? "Updating..."
+              : "強制更新已辨識的 IP 地址（防止ollama回應格式錯誤，但內容方向正確）"}
           </button>
         </div>
       )}
