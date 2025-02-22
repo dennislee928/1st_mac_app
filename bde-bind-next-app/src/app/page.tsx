@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [ips, setIps] = useState<string[]>([]);
+  const [, setIps] = useState<string[]>([]);
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
