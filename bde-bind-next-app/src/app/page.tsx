@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 export default function Home() {
   const [, setIps] = useState<string[]>([]);
-  const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [countdown, setCountdown] = useState(30);
@@ -31,12 +30,10 @@ export default function Home() {
       const response = await fetch("/api/fetch-logs");
       const data: {
         ips?: string[];
-        needsUpdate?: boolean;
         aiSuggestions?: string;
       } = await response.json();
 
       setIps(data.ips || []);
-      setNeedsUpdate(data.needsUpdate || false);
 
       if (data.aiSuggestions) {
         const suggestions = data.aiSuggestions.trim().split(/\n+/);
@@ -45,12 +42,14 @@ export default function Home() {
         console.log("AI Suggestions Received:", suggestions);
 
         // Flexible regex to dynamically parse block and challenge IPs
+
+        // Improved regex to match the new structured AI response
         const blockMatches = data.aiSuggestions.match(
-          /block(?: the following)? IPs?.*?: ([\w\.:, ]+)/i
+          /I suggest to block the following IPs: \[([^\]]+)\]/i
         );
 
         const challengeMatches = data.aiSuggestions.match(
-          /challenge(?: the following)? IPs?.*?: ([\w\.:, ]+)/i
+          /I suggest to challenge the following IPs: \[([^\]]+)\]/i
         );
 
         if (blockMatches && blockMatches[1]) {
@@ -95,7 +94,7 @@ export default function Home() {
 
       if (response.ok) {
         alert("WAF rules updated successfully.");
-        setNeedsUpdate(false);
+        // setNeedsUpdate(false);
       } else {
         alert("Failed to update WAF rules.");
       }
@@ -121,7 +120,6 @@ export default function Home() {
 
       if (response.ok) {
         alert("WAF blocking rules updated successfully.");
-        setNeedsUpdate(false);
       } else {
         alert("Failed to update WAF blocking rules.");
       }
@@ -166,7 +164,7 @@ export default function Home() {
       <h2 className="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">
         過去30分鐘的 Cloudflare 安全日誌
       </h2>
-      {needsUpdate && (
+      {
         <div className="mb-6 p-5 border-2 border-red-200 rounded-lg bg-red-50 shadow-md">
           <p className="text-red-600 font-semibold mb-4">
             有新的 IP 地址需要加入到 WAF 規則 名單。
@@ -186,7 +184,7 @@ export default function Home() {
             {updating ? "更新中..." : "更新 WAF (Blocking)"}
           </button>
         </div>
-      )}
+      }
     </div>
   );
 }
