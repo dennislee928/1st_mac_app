@@ -7,15 +7,21 @@ export default function Home() {
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [countdown] = useState(30);
+  const [countdown, setCountdown] = useState(30);
   const [blockIps, setBlockIps] = useState<string[]>([]);
   const [challengeIps, setChallengeIps] = useState<string[]>([]);
 
   useEffect(() => {
     console.log("Component mounted");
 
-    // Cleanup function if needed
+    // Countdown timer initialization
+    const interval = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    // Cleanup on unmount
     return () => {
+      clearInterval(interval);
       console.log("Component will unmount");
     };
   }, []); // Empty dependency array means this effect runs once after the initial render
@@ -28,23 +34,28 @@ export default function Home() {
         needsUpdate?: boolean;
         aiSuggestions?: string;
       } = await response.json();
+
       setIps(data.ips || []);
       setNeedsUpdate(data.needsUpdate || false);
+
       if (data.aiSuggestions) {
         const suggestions = data.aiSuggestions.trim().split(/\n+/);
         setAiSuggestions(suggestions);
 
         console.log("AI Suggestions Received:", suggestions);
 
-        // Improved regex to match all IP addresses for blocking
-        const blockMatches = data.aiSuggestions.match(/Block: ([\w\.:, ]+)/i);
+        // Flexible regex to dynamically parse block and challenge IPs
+        const blockMatches = data.aiSuggestions.match(
+          /block(?: the following)? IPs?.*?: ([\w\.:, ]+)/i
+        );
+
         const challengeMatches = data.aiSuggestions.match(
-          /Challeng: ([\w\.:, ]+)/i
+          /challenge(?: the following)? IPs?.*?: ([\w\.:, ]+)/i
         );
 
         if (blockMatches && blockMatches[1]) {
           const parsedBlockIps = blockMatches[1]
-            .split(", ")
+            .split(/,\s*/)
             .map((ip) => ip.trim());
           console.log("Parsed Block IPs:", parsedBlockIps);
           setBlockIps(parsedBlockIps);
@@ -54,7 +65,7 @@ export default function Home() {
 
         if (challengeMatches && challengeMatches[1]) {
           const parsedChallengeIps = challengeMatches[1]
-            .split(", ")
+            .split(/,\s*/)
             .map((ip) => ip.trim());
           console.log("Parsed Challenge IPs:", parsedChallengeIps);
           setChallengeIps(parsedChallengeIps);
@@ -68,7 +79,12 @@ export default function Home() {
       console.error("Failed to fetch logs:", error);
     }
   };
+
   const updateWAF = async () => {
+    if (challengeIps.length === 0) {
+      alert("No IPs available for WAF challenge rules.");
+      return;
+    }
     setUpdating(true);
     try {
       const response = await fetch("/api/update-waf", {
@@ -116,8 +132,6 @@ export default function Home() {
     }
   };
 
-  console.log("AI Suggestions Array:", aiSuggestions);
-
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <div className="p-8 bg-white border-4 border-indigo-500 rounded-xl shadow-lg mb-8">
@@ -134,7 +148,7 @@ export default function Home() {
         <br />
         <br />
         <div className="overflow-y-auto max-h-96 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-inner">
-          {aiSuggestions && aiSuggestions.length > 0 ? (
+          {aiSuggestions.length > 0 ? (
             aiSuggestions.map((suggestion, index) => (
               <p key={index} className="mb-2 text-gray-800">
                 {suggestion}
@@ -142,8 +156,8 @@ export default function Home() {
             ))
           ) : (
             <p className="text-gray-500 text-xl">
-              No AI suggestions available yet, this process will use llm
-              resources directly, please wait for {countdown} seconds...
+              No AI suggestions available yet. Please wait for {countdown}{" "}
+              seconds...
             </p>
           )}
         </div>
