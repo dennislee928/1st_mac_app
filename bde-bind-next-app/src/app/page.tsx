@@ -52,6 +52,28 @@ export default function Home() {
     }
   };
 
+  const updateWAFBlocking = async () => {
+    setUpdating(true);
+    try {
+      const response = await fetch("/api/update-waf-blocking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ips }),
+      });
+
+      if (response.ok) {
+        alert("WAF blocking rules updated successfully.");
+        setNeedsUpdate(false);
+      } else {
+        alert("Failed to update WAF blocking rules.");
+      }
+    } catch (error) {
+      console.error("Error updating WAF blocking rules:", error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   useEffect(() => {
     fetchLogs();
     const interval = setInterval(() => {
@@ -95,9 +117,16 @@ export default function Home() {
           <button
             onClick={updateWAF}
             disabled={updating}
-            className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200"
+            className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200 mr-4"
           >
             {updating ? "更新中..." : "更新 WAF"}
+          </button>
+          <button
+            onClick={updateWAFBlocking}
+            disabled={updating}
+            className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
+          >
+            {updating ? "更新中..." : "更新 WAF Blocking"}
           </button>
         </div>
       )}
