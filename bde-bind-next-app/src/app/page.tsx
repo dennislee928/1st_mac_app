@@ -7,25 +7,36 @@ export default function Home() {
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [countdown, setCountdown] = useState(30);
+  const [showAISuggestions, setShowAISuggestions] = useState(false);
   const [blockIps, setBlockIps] = useState<string[]>([]);
   const [challengeIps, setChallengeIps] = useState<string[]>([]);
 
   useEffect(() => {
     console.log("Component mounted");
 
-    // Countdown timer initialization
-    const interval = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-
     // Cleanup on unmount
     return () => {
-      clearInterval(interval);
       console.log("Component will unmount");
     };
-  }, []); // Empty dependency array means this effect runs once after the initial render
+  }, []); // Runs only once after the initial render
+
+  const startCountdown = () => {
+    setCountdown(30); // Reset countdown
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev > 1) {
+          return prev - 1;
+        } else {
+          clearInterval(interval);
+          return 0;
+        }
+      });
+    }, 1000);
+  };
 
   const fetchLogs = async () => {
+    setShowAISuggestions(false); // Hide suggestions until fetched
+    startCountdown(); // Start the countdown
     try {
       const response = await fetch("/api/fetch-logs");
       const data: {
@@ -38,18 +49,17 @@ export default function Home() {
       if (data.aiSuggestions) {
         const suggestions = data.aiSuggestions.trim().split(/\n+/);
         setAiSuggestions(suggestions);
+        setShowAISuggestions(true); // Show suggestions once fetched
 
         console.log("AI Suggestions Received:", suggestions);
 
         // Flexible regex to dynamically parse block and challenge IPs
-
-        // Improved regex to match the new structured AI response
         const blockMatches = data.aiSuggestions.match(
-          /I suggest to block the following IPs: \[([^\]]+)\]/i
+          /I suggest to block the following IPs: ([\w\.:, ]+)/i
         );
 
         const challengeMatches = data.aiSuggestions.match(
-          /I suggest to challenge the following IPs: \[([^\]]+)\]/i
+          /I suggest to challenge the following IPs: ([\w\.:, ]+)/i
         );
 
         if (blockMatches && blockMatches[1]) {
@@ -94,7 +104,6 @@ export default function Home() {
 
       if (response.ok) {
         alert("WAF rules updated successfully.");
-        // setNeedsUpdate(false);
       } else {
         alert("Failed to update WAF rules.");
       }
@@ -145,20 +154,22 @@ export default function Home() {
         </button>
         <br />
         <br />
-        <div className="overflow-y-auto max-h-96 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-inner">
-          {aiSuggestions.length > 0 ? (
-            aiSuggestions.map((suggestion, index) => (
-              <p key={index} className="mb-2 text-gray-800">
-                {suggestion}
+        {showAISuggestions && (
+          <div className="overflow-y-auto max-h-96 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-inner">
+            {aiSuggestions.length > 0 ? (
+              aiSuggestions.map((suggestion, index) => (
+                <p key={index} className="mb-2 text-gray-800">
+                  {suggestion}
+                </p>
+              ))
+            ) : (
+              <p className="text-gray-500 text-xl">
+                No AI suggestions available yet. Please wait for {countdown}{" "}
+                seconds...
               </p>
-            ))
-          ) : (
-            <p className="text-gray-500 text-xl">
-              No AI suggestions available yet. Please wait for {countdown}{" "}
-              seconds...
-            </p>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <h2 className="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">
