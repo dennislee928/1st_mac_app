@@ -7,7 +7,7 @@ export default function Home() {
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(30);
   const [blockIps, setBlockIps] = useState<string[]>([]);
   const [challengeIps, setChallengeIps] = useState<string[]>([]);
 
