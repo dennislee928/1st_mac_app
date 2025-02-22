@@ -19,26 +19,39 @@ export default function Home() {
         needsUpdate?: boolean;
         aiSuggestions?: string;
       } = await response.json();
+
       setIps(data.ips || []);
       setNeedsUpdate(data.needsUpdate || false);
+
       if (data.aiSuggestions) {
         const suggestions = data.aiSuggestions.trim().split(/\n+/);
         setAiSuggestions(suggestions);
 
-        // Parse block and challenge IPs from AI suggestions
+        // Improved regex patterns for capturing multiple IPs
         const blockMatches = data.aiSuggestions.match(
-          /Block the IP addresses: ([^,]+)/
+          /Block the IP addresses: ([\d.:a-fA-F, ]+)/
         );
         const challengeMatches = data.aiSuggestions.match(
-          /Challenge the IP addresses: ([^,]+)/
+          /Challenge the IP addresses: ([\d.:a-fA-F, ]+)/
         );
 
+        // Debugging the raw AI suggestion
+        console.log("Raw AI Suggestions:", data.aiSuggestions);
+
         if (blockMatches && blockMatches[1]) {
-          setBlockIps(blockMatches[1].split(", "));
+          const parsedBlockIps = blockMatches[1]
+            .split(", ")
+            .map((ip) => ip.trim());
+          console.log("Parsed Block IPs:", parsedBlockIps);
+          setBlockIps(parsedBlockIps);
         }
 
         if (challengeMatches && challengeMatches[1]) {
-          setChallengeIps(challengeMatches[1].split(", "));
+          const parsedChallengeIps = challengeMatches[1]
+            .split(", ")
+            .map((ip) => ip.trim());
+          console.log("Parsed Challenge IPs:", parsedChallengeIps);
+          setChallengeIps(parsedChallengeIps);
         }
       } else {
         console.error("No valid AI suggestions found in the response");
