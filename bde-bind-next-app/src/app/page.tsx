@@ -10,18 +10,18 @@ export default function Home() {
   const [showAISuggestions, setShowAISuggestions] = useState(false);
   const [blockIps, setBlockIps] = useState<string[]>([]);
   const [challengeIps, setChallengeIps] = useState<string[]>([]);
+  const [allRecognizedIps, setAllRecognizedIps] = useState<string[]>([]);
 
   useEffect(() => {
     console.log("Component mounted");
 
-    // Cleanup on unmount
     return () => {
       console.log("Component will unmount");
     };
-  }, []); // Runs only once after the initial render
+  }, []);
 
   const startCountdown = () => {
-    setCountdown(30); // Reset countdown
+    setCountdown(30);
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev > 1) {
@@ -35,54 +35,64 @@ export default function Home() {
   };
 
   const fetchLogs = async () => {
-    setShowAISuggestions(false); // Hide suggestions until fetched
-    startCountdown(); // Start the countdown
+    setShowAISuggestions(false);
+    startCountdown();
+
     try {
       const response = await fetch("/api/fetch-logs");
-      const data: {
-        ips?: string[];
-        aiSuggestions?: string;
-      } = await response.json();
+      if (response.ok) {
+        const data: {
+          ips?: string[];
+          aiSuggestions?: string;
+        } = await response.json();
 
-      setIps(data.ips || []);
+        setIps(data.ips || []);
+        setShowAISuggestions(true); // Only show suggestions if fetch is successful
 
-      if (data.aiSuggestions) {
-        const suggestions = data.aiSuggestions.trim().split(/\n+/);
-        setAiSuggestions(suggestions);
-        setShowAISuggestions(true); // Show suggestions once fetched
+        if (data.aiSuggestions) {
+          const suggestions = data.aiSuggestions.trim().split(/\n+/);
+          setAiSuggestions(suggestions);
 
-        console.log("AI Suggestions Received:", suggestions);
+          console.log("AI Suggestions Received:", suggestions);
 
-        // Flexible regex to dynamically parse block and challenge IPs
-        const blockMatches = data.aiSuggestions.match(
-          /I suggest to block the following IPs: ([\w\.:, ]+)/i
-        );
+          // Extract all IPs from the suggestions
+          const allIpMatches = data.aiSuggestions.match(/[\w:.]+/g) || [];
+          setAllRecognizedIps(allIpMatches);
+          console.log("All Recognized IPs:", allIpMatches);
 
-        const challengeMatches = data.aiSuggestions.match(
-          /I suggest to challenge the following IPs: ([\w\.:, ]+)/i
-        );
+          // Parse block and challenge IPs
+          const blockMatches = data.aiSuggestions.match(
+            /I suggest to block the following IPs:[\s*]*([\w\.:, ]+)/i
+          );
 
-        if (blockMatches && blockMatches[1]) {
-          const parsedBlockIps = blockMatches[1]
-            .split(/,\s*/)
-            .map((ip) => ip.trim());
-          console.log("Parsed Block IPs:", parsedBlockIps);
-          setBlockIps(parsedBlockIps);
+          const challengeMatches = data.aiSuggestions.match(
+            /I suggest to challenge the following IPs:[\s*]*([\w\.:, ]+)/i
+          );
+
+          if (blockMatches && blockMatches[1]) {
+            const parsedBlockIps = blockMatches[1]
+              .split(/[\s,]+/)
+              .map((ip) => ip.trim());
+            console.log("Parsed Block IPs:", parsedBlockIps);
+            setBlockIps(parsedBlockIps);
+          } else {
+            console.warn("No valid block IPs found in suggestions.");
+          }
+
+          if (challengeMatches && challengeMatches[1]) {
+            const parsedChallengeIps = challengeMatches[1]
+              .split(/[\s,]+/)
+              .map((ip) => ip.trim());
+            console.log("Parsed Challenge IPs:", parsedChallengeIps);
+            setChallengeIps(parsedChallengeIps);
+          } else {
+            console.warn("No valid challenge IPs found in suggestions.");
+          }
         } else {
-          console.warn("No valid block IPs found in suggestions.");
-        }
-
-        if (challengeMatches && challengeMatches[1]) {
-          const parsedChallengeIps = challengeMatches[1]
-            .split(/,\s*/)
-            .map((ip) => ip.trim());
-          console.log("Parsed Challenge IPs:", parsedChallengeIps);
-          setChallengeIps(parsedChallengeIps);
-        } else {
-          console.warn("No valid challenge IPs found in suggestions.");
+          console.error("No valid AI suggestions found in the response");
         }
       } else {
-        console.error("No valid AI suggestions found in the response");
+        console.error("Failed to fetch logs with status:", response.status);
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
@@ -172,30 +182,36 @@ export default function Home() {
         )}
       </div>
 
-      <h2 className="text-2xl font-bold text-gray-800 border-b pb-3 mb-6">
-        過去30分鐘的 Cloudflare 安全日誌
-      </h2>
-      {
+      {showAISuggestions && (
         <div className="mb-6 p-5 border-2 border-red-200 rounded-lg bg-red-50 shadow-md">
           <p className="text-red-600 font-semibold mb-4">
             有新的 IP 地址需要加入到 WAF 規則 名單。
           </p>
           <button
             onClick={updateWAF}
-            disabled={updating}
+            disabled={updating || challengeIps.length === 0}
             className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200 mr-4"
           >
             {updating ? "更新中..." : "更新 WAF (Challenge)"}
           </button>
           <button
             onClick={updateWAFBlocking}
-            disabled={updating}
+            disabled={updating || blockIps.length === 0}
             className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
           >
             {updating ? "更新中..." : "更新 WAF (Blocking)"}
           </button>
         </div>
-      }
+      )}
+
+      <div>
+        <h3>All Recognized IPs:</h3>
+        <ul>
+          {allRecognizedIps.map((ip, index) => (
+            <li key={index}>{ip}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
