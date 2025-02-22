@@ -226,7 +226,9 @@ export default function Home() {
                 : "Add All Recognized IPs to WAF"
             }
           >
-            {updating ? "更新中..." : "Add All Recognized IPs to WAF"}
+            {updating
+              ? "更新中..."
+              : "強制更新已辨識的 IP 地址，防止ollama回應格式錯誤"}
           </button>
           <button
             onClick={updateWAFBlocking}
@@ -243,9 +245,7 @@ export default function Home() {
             disabled={updating || challengeIps.length === 0}
             className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200"
           >
-            {updating
-              ? "Updating..."
-              : "強制更新已辨識的 IP 地址（防止ollama回應格式錯誤，但內容方向正確）"}
+            {updating ? "Updating..." : "更新WAF (Challenge) 規則"}
           </button>
         </div>
       )}
