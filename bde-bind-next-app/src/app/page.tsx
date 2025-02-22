@@ -7,9 +7,18 @@ export default function Home() {
   const [needsUpdate, setNeedsUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState(30);
+  const [countdown] = useState(30);
   const [blockIps, setBlockIps] = useState<string[]>([]);
   const [challengeIps, setChallengeIps] = useState<string[]>([]);
+
+  useEffect(() => {
+    console.log("Component mounted");
+
+    // Cleanup function if needed
+    return () => {
+      console.log("Component will unmount");
+    };
+  }, []); // Empty dependency array means this effect runs once after the initial render
 
   const fetchLogs = async () => {
     try {
@@ -19,24 +28,19 @@ export default function Home() {
         needsUpdate?: boolean;
         aiSuggestions?: string;
       } = await response.json();
-
       setIps(data.ips || []);
       setNeedsUpdate(data.needsUpdate || false);
-
       if (data.aiSuggestions) {
         const suggestions = data.aiSuggestions.trim().split(/\n+/);
         setAiSuggestions(suggestions);
 
-        // Improved regex patterns for capturing multiple IPs
-        const blockMatches = data.aiSuggestions.match(
-          /Block the IP addresses: ([\d.:a-fA-F, ]+)/
-        );
-        const challengeMatches = data.aiSuggestions.match(
-          /Challenge the IP addresses: ([\d.:a-fA-F, ]+)/
-        );
+        console.log("AI Suggestions Received:", suggestions);
 
-        // Debugging the raw AI suggestion
-        console.log("Raw AI Suggestions:", data.aiSuggestions);
+        // Improved regex to match all IP addresses for blocking
+        const blockMatches = data.aiSuggestions.match(/Block: ([\w\.:, ]+)/i);
+        const challengeMatches = data.aiSuggestions.match(
+          /Challeng: ([\w\.:, ]+)/i
+        );
 
         if (blockMatches && blockMatches[1]) {
           const parsedBlockIps = blockMatches[1]
@@ -44,6 +48,8 @@ export default function Home() {
             .map((ip) => ip.trim());
           console.log("Parsed Block IPs:", parsedBlockIps);
           setBlockIps(parsedBlockIps);
+        } else {
+          console.warn("No valid block IPs found in suggestions.");
         }
 
         if (challengeMatches && challengeMatches[1]) {
@@ -52,6 +58,8 @@ export default function Home() {
             .map((ip) => ip.trim());
           console.log("Parsed Challenge IPs:", parsedChallengeIps);
           setChallengeIps(parsedChallengeIps);
+        } else {
+          console.warn("No valid challenge IPs found in suggestions.");
         }
       } else {
         console.error("No valid AI suggestions found in the response");
@@ -60,7 +68,6 @@ export default function Home() {
       console.error("Failed to fetch logs:", error);
     }
   };
-
   const updateWAF = async () => {
     setUpdating(true);
     try {
@@ -84,6 +91,10 @@ export default function Home() {
   };
 
   const updateWAFBlocking = async () => {
+    if (blockIps.length === 0) {
+      alert("No IPs available for WAF blocking rules.");
+      return;
+    }
     setUpdating(true);
     try {
       const response = await fetch("/api/update-waf-blocking", {
@@ -105,14 +116,6 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    fetchLogs();
-    const interval = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   console.log("AI Suggestions Array:", aiSuggestions);
 
   return (
@@ -121,6 +124,13 @@ export default function Home() {
         <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
           AI 建議 (AI Suggestions)
         </h3>
+        <button
+          onClick={fetchLogs}
+          disabled={updating}
+          className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
+        >
+          點選此鈕獲取最新的 AI 建議
+        </button>
         <div className="overflow-y-auto max-h-96 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-inner">
           {aiSuggestions && aiSuggestions.length > 0 ? (
             aiSuggestions.map((suggestion, index) => (
@@ -130,8 +140,8 @@ export default function Home() {
             ))
           ) : (
             <p className="text-gray-500 text-xl">
-              No AI suggestions available, please wait for {countdown}{" "}
-              seconds...
+              No AI suggestions available yet, this process will use llm
+              resources directly, please wait for {countdown} seconds...
             </p>
           )}
         </div>
