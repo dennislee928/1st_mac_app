@@ -156,7 +156,7 @@ export default function Home() {
     }
     setUpdating(true);
     try {
-      const response = await fetch("/api/update-waf-challenge", {
+      const response = await fetch("/api/update-waf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ips: challengeIps }),
