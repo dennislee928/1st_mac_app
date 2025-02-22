@@ -13,6 +13,7 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
   },
   "dependencies": {
+    "@everapi/iplookupapi-js": "^1.0.0",
     "@vitalets/google-translate-api": "^9.2.1",
     "next": "15.1.6",
     "react": "^19.0.0",
