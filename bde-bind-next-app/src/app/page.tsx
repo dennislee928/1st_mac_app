@@ -131,6 +131,8 @@ export default function Home() {
         >
           點選此鈕獲取最新的 AI 建議
         </button>
+        <br />
+        <br />
         <div className="overflow-y-auto max-h-96 p-4 bg-indigo-50 border-l-4 border-indigo-600 rounded-md shadow-inner">
           {aiSuggestions && aiSuggestions.length > 0 ? (
             aiSuggestions.map((suggestion, index) => (
