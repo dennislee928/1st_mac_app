@@ -8,6 +8,8 @@ export default function Home() {
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [countdown, setCountdown] = useState(10);
+  const [blockIps, setBlockIps] = useState<string[]>([]);
+  const [challengeIps, setChallengeIps] = useState<string[]>([]);
 
   const fetchLogs = async () => {
     try {
@@ -22,6 +24,22 @@ export default function Home() {
       if (data.aiSuggestions) {
         const suggestions = data.aiSuggestions.trim().split(/\n+/);
         setAiSuggestions(suggestions);
+
+        // Parse block and challenge IPs from AI suggestions
+        const blockMatches = data.aiSuggestions.match(
+          /Block the IP addresses: ([^,]+)/
+        );
+        const challengeMatches = data.aiSuggestions.match(
+          /Challenge the IP addresses: ([^,]+)/
+        );
+
+        if (blockMatches && blockMatches[1]) {
+          setBlockIps(blockMatches[1].split(", "));
+        }
+
+        if (challengeMatches && challengeMatches[1]) {
+          setChallengeIps(challengeMatches[1].split(", "));
+        }
       } else {
         console.error("No valid AI suggestions found in the response");
       }
@@ -36,7 +54,7 @@ export default function Home() {
       const response = await fetch("/api/update-waf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ips }),
+        body: JSON.stringify({ ips: challengeIps }),
       });
 
       if (response.ok) {
@@ -58,7 +76,7 @@ export default function Home() {
       const response = await fetch("/api/update-waf-blocking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ips }),
+        body: JSON.stringify({ ips: blockIps }),
       });
 
       if (response.ok) {
@@ -112,34 +130,24 @@ export default function Home() {
       {needsUpdate && (
         <div className="mb-6 p-5 border-2 border-red-200 rounded-lg bg-red-50 shadow-md">
           <p className="text-red-600 font-semibold mb-4">
-            有新的 IP 地址需要加入到 WAF 挑戰 規則 名單。
+            有新的 IP 地址需要加入到 WAF 規則 名單。
           </p>
           <button
             onClick={updateWAF}
             disabled={updating}
             className="px-5 py-2 bg-red-500 text-white font-bold rounded-lg shadow-md hover:bg-red-600 transition-all duration-200 mr-4"
           >
-            {updating ? "更新中..." : "更新 WAF"}
+            {updating ? "更新中..." : "更新 WAF (Challenge)"}
           </button>
           <button
             onClick={updateWAFBlocking}
             disabled={updating}
             className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg shadow-md hover:bg-red-700 transition-all duration-200"
           >
-            {updating ? "更新中..." : "更新 WAF Blocking"}
+            {updating ? "更新中..." : "更新 WAF (Blocking)"}
           </button>
         </div>
       )}
-      <ul className="list-none space-y-2">
-        {ips.map((ip, index) => (
-          <li
-            key={index}
-            className="p-3 bg-white rounded-md shadow-sm text-gray-700"
-          >
-            {ip}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
