@@ -4,6 +4,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import iplookupapi from "@everapi/iplookupapi-js";
 import { useRouter } from "next/navigation";
+//
+import dnslookup from "./pages/api/dnslookup";
+//
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [updating, setUpdating] = useState(false);
@@ -44,12 +47,34 @@ export default function Home() {
   const verifyIPs = async (validIps: string[]) => {
     const verifiedIps: any[] = [];
     for (const ip of validIps) {
+      // Start of Selection
       try {
-        const result = await ipApi.lookup(ip);
-        console.log(result);
-        verifiedIps.push(result);
+        // 首先進行 DNS 查詢
+        const response = await fetch(`/api/dnslookup?ip=${ip}`);
+        if (!response.ok) {
+          throw new Error(`DNS 查詢失敗：${response.statusText}`);
+        }
+        const dnsResult = await response.json();
+
+        // 如果 ipApi 已初始化，則進行 IP 查詢
+        let ipLookupResult = null;
+        if (ipApi) {
+          ipLookupResult = await ipApi.lookup(ip);
+        }
+
+        // 合併結果
+        verifiedIps.push({
+          ...ipLookupResult,
+          dns: dnsResult,
+          ip: ip,
+        });
+
+        console.log(`Verification result for ${ip}:`, {
+          ipLookup: ipLookupResult,
+          dns: dnsResult,
+        });
       } catch (error) {
-        console.error(`Error looking up IP ${ip}:`, error);
+        console.error(`Error verifying IP ${ip}:`, error);
       }
     }
     setVerifiedIpInfo(verifiedIps);
@@ -174,12 +199,18 @@ export default function Home() {
               <ul>
                 {verifiedIpInfo.map((info, index) => (
                   <li key={index} className="text-sm text-gray-700">
-                    {info.ip}: {info.city}, {info.region}, {info.country}
+                    <div>
+                      {info.ip}: {info.city}, {info.region}, {info.country}
+                    </div>
+                    {info.dns && (
+                      <div className="ml-4 text-xs text-gray-600">
+                        DNS: {JSON.stringify(info.dns)}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
             </div>
-            // Start of Selection
           )}
 
           {verifiedAllIpsInfo.length > 0 && (
