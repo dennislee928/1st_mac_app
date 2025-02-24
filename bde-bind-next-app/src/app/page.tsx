@@ -165,7 +165,11 @@ export default function Home() {
           >
             Verify All IPs
           </button>
-
+          <div
+            className="cf-turnstile"
+            data-sitekey="0x4AAAAAAA-YCu2j8t6ctWIF"
+            data-callback="javascriptCallback"
+          ></div>
           {verifiedIpInfo.length > 0 && (
             <div className="mt-4">
               <h4 className="text-xl font-semibold">
@@ -195,11 +199,6 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-            <div
-            class="cf-turnstile"
-            data-sitekey="0x4AAAAAAA-YCu2j8t6ctWIF"
-            data-callback="javascriptCallback"
-          ></div>
           )}
         </div>
       )}
