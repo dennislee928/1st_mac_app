@@ -14,21 +14,23 @@ export default function Home() {
   const [verifiedIpInfo, setVerifiedIpInfo] = useState<any[]>([]);
   const [verifiedAllIpsInfo, setVerifiedAllIpsInfo] = useState<any[]>([]);
 
-  // Initialize the IP lookup API with the provided key
-  const ipApi = new iplookupapi(
-    "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
-  );
+  // 添加一個 state 來存儲 API 實例
+  const [ipApi, setIpApi] = useState<any>(null);
 
   // Ref to hold interval ID
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchIPLookupApi = async () => {
-      const iplookupapi = (await import("@everapi/iplookupapi-js")).default;
-      const apiInstance = new iplookupapi(
-        "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
-      );
-      //    setIpApi(apiInstance);
+      try {
+        const iplookupapi = (await import("@everapi/iplookupapi-js")).default;
+        const apiInstance = new iplookupapi(
+          "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
+        );
+        setIpApi(apiInstance);
+      } catch (error) {
+        console.error("Error initializing IP lookup API:", error);
+      }
     };
 
     fetchIPLookupApi();
