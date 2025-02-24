@@ -195,6 +195,11 @@ export default function Home() {
                 ))}
               </ul>
             </div>
+            <div
+            class="cf-turnstile"
+            data-sitekey="0x4AAAAAAA-YCu2j8t6ctWIF"
+            data-callback="javascriptCallback"
+          ></div>
           )}
         </div>
       )}
