@@ -36,8 +36,23 @@ export default function Home() {
         console.error("Error fetching logs:", error);
       }
     };
+    const fetchIPsonly = async () => {
+      try {
+        const response = await fetch("/api/get-ips-only");
+        if (response.ok) {
+          const data: string[] = await response.json();
+          setIps(data);
+          console.log("Fetched IPs on load:", data);
+        } else {
+          console.error("Failed to fetch IPs:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching IPs:", error);
+      }
+    };
 
     fetchLogs();
+    fetchIPsonly();
   }, []);
 
   // Function to verify selected valid IPs using iplookupapi
@@ -128,19 +143,37 @@ export default function Home() {
       setCountdown(null);
     }
   };
-
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
         AI Suggestions
       </h3>
+      <h2 className="text-3xl font-extrabold mb-4 text-indigo-700">
+        Fetched IPs
+      </h2>
+      <ul>
+        {ips.length > 0 ? (
+          ips.map((ip, index) => (
+            <li key={index} className="text-lg text-gray-800">
+              {ip}
+            </li>
+          ))
+        ) : (
+          <p>No IPs available.</p>
+        )}
+      </ul>
+
       <button
-        onClick={fetchLogs}
-        className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg"
+        onClick={async () => {
+          await fetchLogs();
+        }}
+        className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg mt-4"
       >
         Fetch AI Suggestions
       </button>
+
       <br />
+
       {showAISuggestions && (
         <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
           <h4 className="text-2xl font-semibold mb-2">AI Suggestions:</h4>
@@ -151,55 +184,6 @@ export default function Home() {
               <p>No AI suggestions available.</p>
             )}
           </div>
-          <br />
-          <button
-            onClick={() => verifyIPs(allRecognizedIps)}
-            className="mt-4 ml-4 px-5 py-2 bg-green-500 text-white font-bold rounded-lg"
-          >
-            Verify Selected IPs
-          </button>
-
-          <button
-            onClick={verifyAllIPs}
-            className="mt-4 ml-4 px-5 py-2 bg-blue-500 text-white font-bold rounded-lg"
-          >
-            Verify All IPs
-          </button>
-          <div
-            className="cf-turnstile"
-            data-sitekey="0x4AAAAAAA-YCu2j8t6ctWIF"
-            data-callback="javascriptCallback"
-          ></div>
-          {verifiedIpInfo.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-xl font-semibold">
-                Verified Selected IP Information:
-              </h4>
-              <ul>
-                {verifiedIpInfo.map((info, index) => (
-                  <li key={index} className="text-sm text-gray-700">
-                    {info.ip}: {info.city}, {info.region}, {info.country}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            // Start of Selection
-          )}
-
-          {verifiedAllIpsInfo.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-xl font-semibold">
-                Verified All IPs Information:
-              </h4>
-              <ul>
-                {verifiedAllIpsInfo.map((info, index) => (
-                  <li key={index} className="text-sm text-gray-700">
-                    {info.ip}: {info.city}, {info.region}, {info.country}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
     </div>
