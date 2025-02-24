@@ -14,61 +14,87 @@ export default function Home() {
   const [verifiedIpInfo, setVerifiedIpInfo] = useState<any[]>([]);
   const [verifiedAllIpsInfo, setVerifiedAllIpsInfo] = useState<any[]>([]);
 
-  // 添加一個 state 來存儲 API 實例
-  const [ipApi, setIpApi] = useState<any>(null);
+  // Initialize the IP lookup API with the provided key
+  const ipApi = new iplookupapi(
+    "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
+  );
 
   // Ref to hold interval ID
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const fetchIPLookupApi = async () => {
+    const fetchLogs = async () => {
       try {
-        const iplookupapi = (await import("@everapi/iplookupapi-js")).default;
-        const apiInstance = new iplookupapi(
-          "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
-        );
-        setIpApi(apiInstance);
-      } catch (error) {
-        console.error("Error initializing IP lookup API:", error);
-      }
-    };
-    const fetchIPsonly = async () => {
-      try {
-        const response = await fetch("/api/get-ips-only");
+        const response = await fetch("/api/fetch-logs");
+        const data: { aiSuggestions?: string } = await response.json(); // Explicit typing
         if (response.ok) {
-          const data: string[] = await response.json();
-          setIps(data);
-          console.log("Fetched IPs on load:", data);
+          setAiSuggestions([data.aiSuggestions || ""]);
         } else {
-          console.error("Failed to fetch IPs:", response.status);
+          console.error("Failed to fetch logs:", response.status);
         }
       } catch (error) {
-        console.error("Error fetching IPs:", error);
+        console.error("Error fetching logs:", error);
       }
     };
 
-    fetchIPLookupApi();
     fetchLogs();
-    fetchIPsonly();
   }, []);
 
-  const fetchIPsOnly = async () => {
-    try {
-      const response = await fetch("/api/get-ips-only");
-      if (response.ok) {
-        const data: string[] = await response.json();
-        setIps(data);
-        console.log("Fetched IPs on load:", data);
-      } else {
-        console.error("Failed to fetch IPs:", response.status);
+  // Function to verify selected valid IPs using iplookupapi
+  const verifyIPs = async (validIps: string[]) => {
+    const verifiedIps: any[] = [];
+    for (const ip of validIps) {
+      try {
+        const result = await ipApi.lookup(ip);
+        console.log(result);
+        verifiedIps.push(result);
+      } catch (error) {
+        console.error(`Error looking up IP ${ip}:`, error);
       }
-    } catch (error) {
-      console.error("Error fetching IPs:", error);
     }
+    setVerifiedIpInfo(verifiedIps);
+  };
+
+  // Function to verify all IPs from the `ips` attribute using iplookupapi
+  const verifyAllIPs = async () => {
+    if (ips.length === 0) {
+      alert("No IPs available for verification.");
+      return;
+    }
+
+    const verifiedIps: any[] = [];
+    for (const ip of ips) {
+      try {
+        const result = await ipApi.lookup(ip);
+        console.log("All IPs Verification:", result);
+        verifiedIps.push(result);
+      } catch (error) {
+        console.error(`Error looking up IP ${ip}:`, error);
+      }
+    }
+    setVerifiedAllIpsInfo(verifiedIps);
+  };
+
+  const startCountdown = () => {
+    setCountdown(30);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev && prev > 1) {
+          return prev - 1;
+        } else {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return 0;
+        }
+      });
+    }, 1000);
   };
 
   const fetchLogs = async () => {
     setShowAISuggestions(false);
+    startCountdown();
+
     try {
       const response = await fetch("/api/fetch-logs");
       if (response.ok) {
@@ -97,6 +123,9 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
+    } finally {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      setCountdown(null);
     }
   };
 
@@ -105,32 +134,13 @@ export default function Home() {
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
         AI Suggestions
       </h3>
-      <h2 className="text-3xl font-extrabold mb-4 text-indigo-700">
-        Fetched IPs
-      </h2>
-      <ul>
-        {ips.length > 0 ? (
-          ips.map((ip, index) => (
-            <li key={index} className="text-lg text-gray-800">
-              {ip}
-            </li>
-          ))
-        ) : (
-          <p>No IPs available.</p>
-        )}
-      </ul>
-
       <button
-        onClick={async () => {
-          await fetchLogs();
-        }}
-        className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg mt-4"
+        onClick={fetchLogs}
+        className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg"
       >
         Fetch AI Suggestions
       </button>
-
       <br />
-
       {showAISuggestions && (
         <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
           <h4 className="text-2xl font-semibold mb-2">AI Suggestions:</h4>
@@ -141,6 +151,58 @@ export default function Home() {
               <p>No AI suggestions available.</p>
             )}
           </div>
+          <br />
+          <button
+            onClick={() => verifyIPs(allRecognizedIps)}
+            className="mt-4 ml-4 px-5 py-2 bg-green-500 text-white font-bold rounded-lg"
+          >
+            Verify Selected IPs
+          </button>
+
+          <button
+            onClick={verifyAllIPs}
+            className="mt-4 ml-4 px-5 py-2 bg-blue-500 text-white font-bold rounded-lg"
+          >
+            Verify All IPs
+          </button>
+
+          {verifiedIpInfo.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-xl font-semibold">
+                Verified Selected IP Information:
+              </h4>
+              <ul>
+                {verifiedIpInfo.map((info, index) => (
+                  <li key={index} className="text-sm text-gray-700">
+                    {info.ip}: {info.city}, {info.region}, {info.country}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            // Start of Selection
+          )}
+
+          {verifiedAllIpsInfo.length > 0 && (
+            <>
+              <div className="mt-4">
+                <h4 className="text-xl font-semibold">
+                  Verified All IPs Information:
+                </h4>
+                <ul>
+                  {verifiedAllIpsInfo.map((info, index) => (
+                    <li key={index} className="text-sm text-gray-700">
+                      {info.ip}: {info.city}, {info.region}, {info.country}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div
+                className="cf-turnstile"
+                data-sitekey="0x4AAAAAAA-YCu2j8t6ctWIF"
+                data-callback="javascriptCallback"
+              ></div>
+            </>
+          )}
         </div>
       )}
     </div>
