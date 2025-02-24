@@ -32,10 +32,24 @@ export default function Home() {
         console.error("Error initializing IP lookup API:", error);
       }
     };
+    const fetchIPsonly = async () => {
+      try {
+        const response = await fetch("/api/get-ips-only");
+        if (response.ok) {
+          const data: string[] = await response.json();
+          setIps(data);
+          console.log("Fetched IPs on load:", data);
+        } else {
+          console.error("Failed to fetch IPs:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching IPs:", error);
+      }
+    };
 
     fetchIPLookupApi();
     fetchLogs();
-    fetchIPsOnly();
+    fetchIPsonly();
   }, []);
 
   const fetchIPsOnly = async () => {
