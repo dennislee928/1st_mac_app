@@ -23,93 +23,36 @@ export default function Home() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const response = await fetch("/api/fetch-logs");
-        const data: { aiSuggestions?: string } = await response.json(); // Explicit typing
-        if (response.ok) {
-          setAiSuggestions([data.aiSuggestions || ""]);
-        } else {
-          console.error("Failed to fetch logs:", response.status);
-        }
-      } catch (error) {
-        console.error("Error fetching logs:", error);
-      }
-    };
-    const fetchIPsonly = async () => {
-      try {
-        const response = await fetch("/api/get-ips-only");
-        if (response.ok) {
-          const data: string[] = await response.json();
-          setIps(data);
-          console.log("Fetched IPs on load:", data);
-        } else {
-          console.error("Failed to fetch IPs:", response.status);
-        }
-      } catch (error) {
-        console.error("Error fetching IPs:", error);
-      }
+    const fetchIPLookupApi = async () => {
+      const iplookupapi = (await import("@everapi/iplookupapi-js")).default;
+      const apiInstance = new iplookupapi(
+        "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
+      );
+      //    setIpApi(apiInstance);
     };
 
+    fetchIPLookupApi();
     fetchLogs();
-    fetchIPsonly();
+    fetchIPsOnly();
   }, []);
 
-  // Function to verify selected valid IPs using iplookupapi
-  const verifyIPs = async (validIps: string[]) => {
-    const verifiedIps: any[] = [];
-    for (const ip of validIps) {
-      try {
-        const result = await ipApi.lookup(ip);
-        console.log(result);
-        verifiedIps.push(result);
-      } catch (error) {
-        console.error(`Error looking up IP ${ip}:`, error);
+  const fetchIPsOnly = async () => {
+    try {
+      const response = await fetch("/api/get-ips-only");
+      if (response.ok) {
+        const data: string[] = await response.json();
+        setIps(data);
+        console.log("Fetched IPs on load:", data);
+      } else {
+        console.error("Failed to fetch IPs:", response.status);
       }
+    } catch (error) {
+      console.error("Error fetching IPs:", error);
     }
-    setVerifiedIpInfo(verifiedIps);
-  };
-
-  // Function to verify all IPs from the `ips` attribute using iplookupapi
-  const verifyAllIPs = async () => {
-    if (ips.length === 0) {
-      alert("No IPs available for verification.");
-      return;
-    }
-
-    const verifiedIps: any[] = [];
-    for (const ip of ips) {
-      try {
-        const result = await ipApi.lookup(ip);
-        console.log("All IPs Verification:", result);
-        verifiedIps.push(result);
-      } catch (error) {
-        console.error(`Error looking up IP ${ip}:`, error);
-      }
-    }
-    setVerifiedAllIpsInfo(verifiedIps);
-  };
-
-  const startCountdown = () => {
-    setCountdown(30);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-
-    intervalRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev && prev > 1) {
-          return prev - 1;
-        } else {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          return 0;
-        }
-      });
-    }, 1000);
   };
 
   const fetchLogs = async () => {
     setShowAISuggestions(false);
-    startCountdown();
-
     try {
       const response = await fetch("/api/fetch-logs");
       if (response.ok) {
@@ -138,11 +81,9 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Failed to fetch logs:", error);
-    } finally {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      setCountdown(null);
     }
   };
+
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
