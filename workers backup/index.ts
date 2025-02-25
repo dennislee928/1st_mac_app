@@ -91,7 +91,6 @@ async function fetchAISuggestions(ipArray) {
   try {
     console.log(`Starting AI suggestions request for ${ipArray.length} IPs`);
 
-    // 如果 IP 數量過多，只取前 15 個進行分析
     const analyzedIps = ipArray.slice(0, 15);
 
     const prompt = `
@@ -103,12 +102,12 @@ ${analyzedIps.join("\n")}
 2. 可能的自動化行為風險
 3. 建議的封鎖策略
 
-請用繁體中文回答，保持簡潔。
+務必用繁體中文回答。
     `.trim();
 
     console.log("Sending request to AI with prompt length:", prompt.length);
     const response = await fetch(
-      "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-2-7b-chat",
+      "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct",
       {
         method: "POST",
         headers: {
@@ -118,38 +117,25 @@ ${analyzedIps.join("\n")}
         },
         body: JSON.stringify({
           prompt: prompt,
-          max_tokens: 256, // 進一步減少 token 數量
+          max_tokens: 300,
           temperature: 0.3,
-          stream: false, // 確保不使用串流模式
+          stream: false,
         }),
       }
     );
 
     if (!response.ok) {
       console.error("AI API error status:", response.status);
-      console.error(
-        "AI API error headers:",
-        Object.fromEntries(response.headers)
-      );
       const errorText = await response.text();
-      console.error("AI API error response:", errorText);
       throw new Error(`AI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log("AI response received successfully");
-
-    return (
-      data.result?.response ||
-      `已分析 ${ipArray.length} 個可疑 IP。建議審查並考慮封鎖這些位址。`
-    );
+    // 直接返回 AI 的原始回應
+    return data.result?.response || `無法獲取 AI 建議`;
   } catch (error) {
-    console.error("Detailed error in fetchAISuggestions:", error);
-    return `已偵測到 ${ipArray.length} 個可疑 IP。
-建議：
-1. 檢查這些 IP 的訪問模式
-2. 考慮暫時封鎖高頻訪問的位址
-3. 監控是否有異常的請求模式`;
+    console.error("Error in fetchAISuggestions:", error);
+    return `無法獲取 AI 建議：${error.message}`;
   }
 }
 
