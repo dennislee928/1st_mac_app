@@ -260,25 +260,36 @@ export default function Home() {
     }
   };
 
-  // 新增處理 WAF 更新的函數
+  // 修改處理 WAF 更新的函數
   const handleUpdateWAF = async (ips: string[]) => {
     try {
+      setUpdating(true); // 添加載入狀態
+      console.log("Sending IPs to WAF update:", ips);
+
       const response = await fetch("/api/update-waf", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ips }),
+        body: JSON.stringify({ ips }), // 確保與 updateWAFRule 的參數格式一致
       });
 
       if (!response.ok) {
-        throw new Error(`WAF update failed: ${response.status}`);
+        const errorData = await response.text();
+        throw new Error(`WAF update failed: ${response.status} - ${errorData}`);
       }
 
-      alert("已成功更新 WAF 規則");
+      console.log("WAF rules updated successfully");
+      alert("已成功更新 WAF 規則，這些 IP 將被 控管");
     } catch (error) {
       console.error("Error updating WAF:", error);
-      alert("更新 WAF 規則失敗");
+      alert(
+        `更新 WAF 規則失敗: ${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`
+      );
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -317,10 +328,13 @@ export default function Home() {
           <br />
           <div className="mt-4 flex gap-4">
             <button
-              onClick={() => handleUpdateWAF(allRecognizedIps)}
-              className="px-5 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600"
+              onClick={() => handleUpdateWAF(ips)}
+              disabled={updating}
+              className={`px-5 py-2 ${
+                updating ? "bg-gray-400" : "bg-green-500 hover:bg-green-600"
+              } text-white font-bold rounded-lg`}
             >
-              新增以上ip至 cloudflare waf 規則
+              {updating ? "更新中..." : "新增以上ip至 cloudflare waf 規則"}
             </button>
             <button
               onClick={() =>
