@@ -1,17 +1,37 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatorGeneralProvider } from "@arwes/animation";
-//import { Arwes, StylesBaseline } from "@arwes/core";
+
+import { Card } from "./pages/components/ui/card";
+import { CardContent } from "./pages/components/ui/card";
+import { Button } from "./pages/components/ui/buttons";
+import Footer from "./pages/components/ui/footer";
+import CollapsibleMenu from "./pages/components/ui/menuBar";
 //
-import { Animator } from "@arwes/react-animator";
-import { Animated } from "@arwes/react-animated";
-import { Text } from "@arwes/react";
+import {
+  Shield,
+  AlertTriangle,
+  RefreshCw,
+  X,
+  ChevronRight,
+  Activity,
+} from "lucide-react";
 //
 // import dnslookup from "./pages/api/dnslookup";
 //
+
+// 定義更具體的類型來替代 any
+interface IpLookupResult {
+  ip: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  security?: {
+    is_vpn: boolean | null;
+    is_proxy: boolean | null;
+    threat_score: number | null;
+  };
+}
 
 interface IpLookupResponse {
   data: {
@@ -37,14 +57,14 @@ interface IpLookupResponse {
 
 interface ApiResponse {
   ip: IpLookupResponse;
-  dns: any;
+  dns: Record<string, unknown>;
 }
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface WorkerResponse {
   ips: string[];
   aiSuggestions?: string;
 }
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface IpsResponse {
   ips: string[];
 }
@@ -55,28 +75,33 @@ interface LogsResponse {
   showAISuggestions: boolean;
 }
 
-const ANIMATOR_GENERAL = {
-  duration: { enter: 200, exit: 200 },
-};
-
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [countdown, setCountdown] = useState<number | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showAISuggestions, setShowAISuggestions] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [allRecognizedIps, setAllRecognizedIps] = useState<string[]>([]);
-  const [verifiedIpInfo, setVerifiedIpInfo] = useState<any[]>([]);
-  const [verifiedAllIpsInfo, setVerifiedAllIpsInfo] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [verifiedIpInfo, setVerifiedIpInfo] = useState<IpLookupResult[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [verifiedAllIpsInfo, setVerifiedAllIpsInfo] = useState<
+    IpLookupResult[]
+  >([]);
   const [isLoadingIPs, setIsLoadingIPs] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   // 添加一個 state 來存儲動態導入的 iplookupapi
-  const [ipApi, setIpApi] = useState<any>(null);
+  const [ipApi, setIpApi] = useState<{
+    lookup: (ip: string) => Promise<IpLookupResult>;
+  } | null>(null);
 
   // 添加 intervalRef
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const router = useRouter();
 
   useEffect(() => {
@@ -138,8 +163,9 @@ export default function Home() {
   }, []);
 
   // 修改 verifyIPs 函數來使用 route.ts 的 IP lookup endpoint
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const verifyIPs = async (validIps: string[]) => {
-    const verifiedIps: any[] = [];
+    const verifiedIps: IpLookupResult[] = [];
     for (const ip of validIps) {
       try {
         // 使用我們的 API route 進行查詢
@@ -154,7 +180,6 @@ export default function Home() {
           region: result.ip.data.location.region.name,
           country: result.ip.data.location.country.name,
           security: result.ip.data.security,
-          dns: result.dns,
         });
       } catch (error) {
         console.error(`Error verifying IP ${ip}:`, error);
@@ -164,18 +189,21 @@ export default function Home() {
   };
 
   // Function to verify all IPs from the `ips` attribute using iplookupapi
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const verifyAllIPs = async () => {
     if (ips.length === 0) {
       alert("No IPs available for verification.");
       return;
     }
 
-    const verifiedIps: any[] = [];
+    const verifiedIps: IpLookupResult[] = [];
     for (const ip of ips) {
       try {
-        const result = await ipApi.lookup(ip);
-        console.log("All IPs Verification:", result);
-        verifiedIps.push(result);
+        if (ipApi) {
+          const result = await ipApi.lookup(ip);
+          console.log("All IPs Verification:", result);
+          verifiedIps.push(result);
+        }
       } catch (error) {
         console.error(`Error looking up IP ${ip}:`, error);
       }
@@ -198,7 +226,7 @@ export default function Home() {
       });
     }, 1000);
   };
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchLogs = async () => {
     setShowAISuggestions(false);
     startCountdown();
@@ -271,6 +299,7 @@ export default function Home() {
   };
 
   // 在 return 之前添加 LoadingDots 組件
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const LoadingDots = () => {
     return (
       <span className="loading-dots">
@@ -282,6 +311,7 @@ export default function Home() {
   };
 
   // 在 return 之前添加 LoadingSpinner 組件
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const LoadingSpinner = () => {
     return (
       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2" />
@@ -289,162 +319,172 @@ export default function Home() {
   };
 
   return (
-    <Animator active={true}>
-      <AnimatorGeneralProvider animator={ANIMATOR_GENERAL}>
-        <div className="min-h-screen bg-[#001010] text-cyan-500 p-8">
-          <main>
-            <div className="max-w-6xl mx-auto">
-              <h1 className="text-3xl font-extrabold mb-6">
-                IP 資訊 - 過去30分鐘自動化程式可能性高之ip address
-              </h1>
+    <div className="min-h-screen bg-[#0A1119] text-white relative">
+      {/* 將 CollapsibleMenu 固定在螢幕左上角 */}
+      <div className="fixed top-4 left-4 z-50">
+        <CollapsibleMenu />
+      </div>
 
-              {/* 載入指示器 */}
-              {(isLoadingIPs || isLoadingLogs) && (
-                <div className="flex items-center justify-center p-4 text-cyan-400">
-                  {isLoadingIPs && (
-                    <div className="flex items-center mr-4">
-                      <LoadingSpinner />
-                      <span>IPs 載入中</span>
-                      <LoadingDots />
-                    </div>
-                  )}
-                  {isLoadingLogs && (
-                    <div className="flex items-center">
-                      <LoadingSpinner />
-                      <span>AI Response 載入中</span>
-                      <LoadingDots />
-                    </div>
-                  )}
-                </div>
-              )}
+      {/* 主要內容區域，添加足夠的左側邊距以避免與 CollapsibleMenu 重疊 */}
+      <div className="container mx-auto py-12 px-4 pb-24 ml-16 sm:ml-20">
+        {/* Header */}
+        <div className="border-b border-[#1E2D3D] bg-[#0A1119]/50 backdrop-blur supports-[backdrop-filter]:bg-[#0A1119]/50">
+          <div className="container mx-auto px-6 py-4">
+            <h1 className="text-2xl font-bold">Security Performance Center</h1>
+          </div>
+        </div>
 
-              {/* 顯示 IPs */}
-              {!isLoadingIPs && ips.length > 0 && (
-                <Text as="h1" className="text-2xl font-bold mb-6">
-                  <h2 className="text-xl font-semibold mb-4">有疑慮之 IPs:</h2>
-                  <div className="max-h-60 overflow-y-auto">
-                    <ul className="space-y-1 text-cyan-300">
-                      {ips.map((ip, index) => (
-                        <li key={index} className="font-mono">
-                          {ip}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Text>
-              )}
+        {/* Main Stats Card */}
+        <Card className="mb-8 bg-[#141D2B] border-[#1E2D3D]">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-4xl font-bold mb-2">
+                  <span className="text-[#9FEF00]">{ips.length}</span>
+                </h2>
+                <p className="text-gray-400 max-w-md">
+                  IPs of cyber incidents in the last 30 minutes were from
+                  potentially malicious IP addresses
+                </p>
+              </div>
+              <Activity className="text-[#9FEF00] w-8 h-8" />
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* 顯示 AI 建議 */}
-              {!isLoadingLogs && aiSuggestions.length > 0 && (
-                <Text as="h1" className="text-2xl font-bold mb-6">
-                  <h2 className="text-2xl font-semibold mb-4">
-                    Ollama AI 建議:
-                  </h2>
-                  <div className="prose prose-lg max-w-none text-cyan-300">
-                    {aiSuggestions.map((suggestion, index) => (
+        {/* AI Suggestions Section */}
+        {!isLoadingLogs && aiSuggestions.length > 0 && (
+          <Card className="mb-8 bg-[#141D2B] border-[#1E2D3D]">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="text-[#9FEF00] w-5 h-5" />
+                <h3 className="text-xl font-semibold">AI Security Analysis</h3>
+              </div>
+              <div className="prose prose-invert max-w-none">
+                {aiSuggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="space-y-4"
+                    style={{ whiteSpace: "pre-wrap" }}
+                  >
+                    {suggestion.split("**").map((part, i) => (
                       <div
-                        key={index}
-                        className="markdown-content"
-                        style={{
-                          whiteSpace: "pre-wrap",
-                          lineHeight: "1.8",
-                          fontSize: "1.1rem",
-                        }}
+                        key={i}
+                        className={
+                          i % 2 === 1
+                            ? "text-[#9FEF00] font-bold my-3"
+                            : "text-gray-300"
+                        }
                       >
-                        {suggestion.split("**").map((part, i) => {
-                          if (i % 2 === 1) {
-                            return (
-                              <Text
-                                as="strong"
-                                key={i}
-                                className="text-cyan-400 text-xl block my-3"
-                              >
-                                {part}
-                              </Text>
-                            );
-                          }
-                          return (
-                            <div key={i} className="ml-4 mb-2">
-                              {part.split("*").map((bullet, j) => {
-                                if (j % 2 === 1) {
-                                  return (
-                                    <li
-                                      key={j}
-                                      className="list-disc ml-6 my-2 text-cyan-300"
-                                    >
-                                      {bullet}
-                                    </li>
-                                  );
-                                }
-                                return bullet;
-                              })}
-                            </div>
-                          );
-                        })}
+                        {part}
                       </div>
                     ))}
                   </div>
-                </Text>
-              )}
-
-              {/* 操作按鈕 */}
-              <div className="mt-6 flex gap-4">
-                <button
-                  onClick={() => handleUpdateWAF(ips)}
-                  disabled={updating || ips.length === 0}
-                  className={`px-5 py-2 ${
-                    updating || ips.length === 0
-                      ? "bg-gray-600"
-                      : "bg-cyan-900 hover:bg-cyan-800"
-                  } text-cyan-100 font-bold rounded-lg transition-colors`}
-                >
-                  {updating ? "更新中..." : "新增此些ip至 cloudflare waf 規則"}
-                </button>
-                <button
-                  onClick={() =>
-                    (window.location.href = "https://www.twister5.com.tw/")
-                  }
-                  className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-cyan-100 font-bold rounded-lg transition-colors"
-                >
-                  取消
-                </button>
+                ))}
               </div>
-            </div>
-          </main>
-        </div>
-      </AnimatorGeneralProvider>
+            </CardContent>
+          </Card>
+        )}
 
-      <style jsx>{`
-        .loading-dots {
-          display: inline-block;
+        {/* Loading States */}
+        {(isLoadingIPs || isLoadingLogs) && (
+          <Card className="mb-8 bg-[#141D2B] border-[#1E2D3D]">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center gap-4">
+                {isLoadingIPs && (
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 animate-spin text-[#9FEF00]" />
+                    <span>Loading IP data...</span>
+                  </div>
+                )}
+                {isLoadingLogs && (
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-5 h-5 animate-spin text-[#9FEF00]" />
+                    <span>Processing AI analysis...</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Action Buttons */}
+        {!isLoadingLogs && aiSuggestions.length > 0 && (
+          <div className="flex gap-4 mb-8">
+            <Button
+              onClick={() => handleUpdateWAF(ips)}
+              disabled={updating || ips.length === 0}
+              className={`gap-2 ${
+                updating || ips.length === 0
+                  ? "bg-gray-600 cursor-not-allowed opacity-70"
+                  : "bg-primary hover:bg-primary-hover text-black"
+              }`}
+            >
+              <Shield className="w-4 h-4" />
+              {updating ? "更新 WAF 規則中..." : "將 IP 添加到 WAF 規則"}
+            </Button>
+            <Button
+              onClick={() =>
+                (window.location.href = "https://www.twister5.com.tw/")
+              }
+              variant="outline"
+              className="border-[#1E2D3D] hover:bg-[#1E2D3D]"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        {/* IP List */}
+        {!isLoadingIPs && ips.length > 0 && (
+          <>
+            <Card className="bg-[#141D2B] border-[#1E2D3D]">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="text-[#9FEF00] w-5 h-5" />
+                  <h3 className="text-xl font-semibold">Suspicious IPs</h3>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                  <div className="grid gap-2">
+                    {ips.map((ip, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 rounded-lg bg-[#1E2D3D] hover:bg-[#2A3B4D] transition-colors"
+                      >
+                        <span className="font-mono text-gray-300">{ip}</span>
+                        <ChevronRight className="w-4 h-4 text-gray-500" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+
+      {/* Footer 保持 sticky 定位 */}
+      <div className="sticky bottom-0 left-0 right-0 z-40">
+        <Footer />
+      </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
         }
-
-        .dot {
-          animation: dotBounce 1.4s infinite;
-          display: inline-block;
-          margin: 0 2px;
-          color: #0ff;
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #1e2d3d;
+          border-radius: 4px;
         }
-
-        .dot:nth-child(2) {
-          animation-delay: 0.2s;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #2a3b4d;
+          border-radius: 4px;
         }
-
-        .dot:nth-child(3) {
-          animation-delay: 0.4s;
-        }
-
-        @keyframes dotBounce {
-          0%,
-          80%,
-          100% {
-            transform: translateY(0);
-          }
-          40% {
-            transform: translateY(-4px);
-          }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #374b61;
         }
       `}</style>
-    </Animator>
+    </div>
   );
 }
