@@ -7,16 +7,14 @@ Chart.register(...registerables);
 
 export function AreaChart() {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [chartInstance, setChartInstance] = useState<Chart | null>(null);
 
   useEffect(() => {
-    if (chartRef.current) {
-      // Destroy existing chart instance if it exists
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
+    const canvas = chartRef.current;
+    if (!canvas) return;
 
-      // Sample data for the area chart
+    const createChart = () => {
       const data = {
         labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
         datasets: [
@@ -32,10 +30,9 @@ export function AreaChart() {
         ],
       };
 
-      // Create new chart instance - 直接使用 canvas 元素而不是 context
-      const newChartInstance = new Chart(chartRef.current, {
+      return new Chart(canvas as HTMLCanvasElement, {
         type: "line",
-        data: data,
+        data,
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -59,32 +56,29 @@ export function AreaChart() {
           },
         },
       });
-      setChartInstance(newChartInstance);
-    }
-
-    // Cleanup function
-    return () => {
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
     };
-  }, [chartInstance]);
+
+    const newChartInstance = createChart();
+    setChartInstance(newChartInstance);
+
+    return () => {
+      newChartInstance.destroy();
+    };
+  }, []);
 
   return <canvas ref={chartRef} />;
 }
 
 export function BarChart() {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [chartInstance, setChartInstance] = useState<Chart | null>(null);
 
   useEffect(() => {
-    if (chartRef.current) {
-      // Destroy existing chart instance if it exists
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
+    const canvas = chartRef.current;
+    if (!canvas) return;
 
-      // Sample data for the bar chart
+    const createChart = () => {
       const data = {
         labels: ["Electronics", "Clothing", "Food", "Books", "Home", "Beauty"],
         datasets: [
@@ -104,10 +98,9 @@ export function BarChart() {
         ],
       };
 
-      // 直接使用 canvas 元素而不是 context
-      const newChartInstance = new Chart(chartRef.current, {
+      return new Chart(canvas as HTMLCanvasElement, {
         type: "bar",
-        data: data,
+        data,
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -131,16 +124,15 @@ export function BarChart() {
           },
         },
       });
-      setChartInstance(newChartInstance);
-    }
-
-    // Cleanup function
-    return () => {
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
     };
-  }, [chartInstance]);
+
+    const newChartInstance = createChart();
+    setChartInstance(newChartInstance);
+
+    return () => {
+      newChartInstance.destroy();
+    };
+  }, []);
 
   return <canvas ref={chartRef} />;
 }
