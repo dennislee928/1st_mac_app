@@ -14,7 +14,7 @@ var Block_RULE_ID = "f778bd84056045d2a867acfbe1231766";
 // Function to fetch IPs only
 async function fetchIPsonly() {
   const endTime = new Date();
-  const startTime = new Date(endTime - 10 * 60 * 1000); // 最近1分鐘
+  const startTime = new Date(endTime - 30 * 60 * 1000); // 改為最近30分鐘
 
   const graphqlQuery = {
     operationName: "GetSecuritySampledLogs",
@@ -305,24 +305,48 @@ export default {
     // Handle fetch logs request
     if (url.pathname === "/api/fetch-logs" && request.method === "GET") {
       console.log("Handling /fetch-logs");
+      try {
+        // 設置超時時間
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 50000)
+        );
 
-      const ips = await fetchIPsonly();
-      const aiSuggestions = await fetchAISuggestions(ips); // 直接使用獲取的 IPs 餵給 AI
+        // 並行執行兩個請求
+        const [ips, aiSuggestions] = await Promise.all([
+          Promise.race([fetchIPsonly(), timeoutPromise]),
+          Promise.race([fetchAISuggestions([]), timeoutPromise]),
+        ]);
 
-      return new Response(
-        JSON.stringify({
-          ips,
-          aiSuggestions,
-          showAISuggestions: true,
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
-      );
+        return new Response(
+          JSON.stringify({
+            ips,
+            aiSuggestions,
+            showAISuggestions: true,
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          }
+        );
+      } catch (error) {
+        console.error("Error in fetch-logs:", error);
+        return new Response(
+          JSON.stringify({
+            error: "Request processing failed",
+            details: error.message,
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+          }
+        );
+      }
     }
 
     // Handle update WAF request

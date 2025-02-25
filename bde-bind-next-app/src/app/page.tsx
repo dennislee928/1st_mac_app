@@ -293,7 +293,7 @@ export default function Home() {
       {(isLoadingIPs || isLoadingLogs) && (
         <div className="flex items-center justify-center p-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-          <span className="ml-2 text-indigo-600">載入中...</span>
+          <span className="ml-2 text-indigo-600">AI Response 載入中...</span>
         </div>
       )}
 
