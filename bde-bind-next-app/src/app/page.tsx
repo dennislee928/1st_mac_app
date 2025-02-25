@@ -39,7 +39,11 @@ interface WorkerResponse {
   aiSuggestions?: string;
 }
 
-interface LogResponse {
+interface IpsResponse {
+  ips: string[];
+}
+
+interface LogsResponse {
   ips: string[];
   aiSuggestions: string;
   showAISuggestions: boolean;
@@ -83,81 +87,44 @@ export default function Home() {
 
     initializeIpApi();
   }, []);
-  // 獲取 IPs 的 useEffect
+
+  // 分開獲取 IPs 和 AI 建議
   useEffect(() => {
-    const fetchIPsFromWorker = async () => {
-      setIsLoadingIPs(true);
+    const fetchIPsAndLogs = async () => {
+      // 獲取 IPs
       try {
-        const response = await fetch("/api/get-ips-only");
-        if (response.ok) {
-          const ips = (await response.json()) as string[];
-          setIps(ips);
-          console.log("Fetched IPs from worker:", ips);
-        } else {
-          console.error("Failed to fetch IPs:", response.status);
+        setIsLoadingIPs(true);
+        const ipsResponse = await fetch("/api/get-ips-only");
+        if (ipsResponse.ok) {
+          const ipsData = (await ipsResponse.json()) as string[];
+          setIps(ipsData);
+          console.log("IPs fetched:", ipsData);
         }
       } catch (error) {
         console.error("Error fetching IPs:", error);
       } finally {
         setIsLoadingIPs(false);
       }
-    };
 
-    fetchIPsFromWorker();
-  }, []);
-
-  //獲取ai建議
-
-  useEffect(() => {
-    const fetchLogs = async () => {
+      // 獨立獲取 AI 建議
       try {
-        const response = await fetch("/api/fetch-logs");
-        const data: { aiSuggestions?: string } = await response.json(); // Explicit typing
-        if (response.ok) {
-          setAiSuggestions([data.aiSuggestions || ""]);
-        } else {
-          console.error("Failed to fetch logs:", response.status);
-        }
-      } catch (error) {
-        console.error("Error fetching logs:", error);
-      }
-    };
-
-    fetchLogs();
-  }, []);
-
-  // 獲取 Logs 的 useEffect (包含 IPs 和 AI 建議)
-  useEffect(() => {
-    const fetchLogsFromWorker = async () => {
-      setIsLoadingLogs(true);
-      try {
-        const response = await fetch("/api/fetch-logs");
-        if (response.ok) {
-          const data = (await response.json()) as LogResponse;
-
-          // 設置 IPs
-          setIps(data.ips || []);
-
-          // 設置 AI 建議
+        setIsLoadingLogs(true);
+        const logsResponse = await fetch("/api/fetch-logs");
+        if (logsResponse.ok) {
+          const data = (await logsResponse.json()) as LogsResponse;
           if (data.aiSuggestions) {
-            const suggestions = data.aiSuggestions.trim().split(/\n+/);
-            setAiSuggestions(suggestions);
-            console.log("AI Suggestions Received:", suggestions);
+            setAiSuggestions([data.aiSuggestions]);
+            setShowAISuggestions(true);
           }
-
-          // 設置顯示狀態
-          setShowAISuggestions(data.showAISuggestions);
-        } else {
-          console.error("Failed to fetch logs:", response.status);
         }
       } catch (error) {
-        console.error("Error fetching logs:", error);
+        console.error("Error fetching AI suggestions:", error);
       } finally {
         setIsLoadingLogs(false);
       }
     };
 
-    fetchLogsFromWorker();
+    fetchIPsAndLogs();
   }, []);
 
   // 修改 verifyIPs 函數來使用 route.ts 的 IP lookup endpoint
@@ -298,8 +265,7 @@ export default function Home() {
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
         IP 資訊 - 過去30分鐘自動化程式可能性高之ip address
       </h3>
-
-      {/* 顯示 AI 建議和相關按鈕 */}
+      {/* 顯示 AI 建議 */}
       {!isLoadingLogs && aiSuggestions.length > 0 && (
         <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
           <h4 className="text-2xl font-semibold mb-2">Ollama AI 建議:</h4>
@@ -308,51 +274,52 @@ export default function Home() {
               <p key={index}>{suggestion}</p>
             ))}
           </div>
-          <br />
-          {/* 顯示從 Worker 獲取的 IPs */}
-          {!isLoadingIPs && ips.length > 0 && (
-            <div className="mt-4 p-4 bg-white rounded-md shadow">
-              <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
-              <div className="max-h-60 overflow-y-auto">
-                <ul className="space-y-1">
-                  {ips.map((ip, index) => (
-                    <li key={index} className="text-sm text-gray-700">
-                      {ip}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
-
-          <br />
-          <div className="mt-4 flex gap-4">
-            <button
-              onClick={() => handleUpdateWAF(ips)}
-              disabled={updating}
-              className={`px-5 py-2 ${
-                updating ? "bg-gray-400" : "bg-green-500 hover:bg-green-600"
-              } text-white font-bold rounded-lg`}
-            >
-              {updating ? "更新中..." : "新增以上ip至 cloudflare waf 規則"}
-            </button>
-            <button
-              onClick={() =>
-                (window.location.href = "https://www.twister5.com.tw/")
-              }
-              className="px-5 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600"
-            >
-              取消
-            </button>
-          </div>
         </div>
       )}
 
-      {/* 顯示載入狀態 */}
+      {/* 載入指示器 */}
       {(isLoadingIPs || isLoadingLogs) && (
         <div className="flex items-center justify-center p-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-          <span className="ml-2 text-indigo-600">AI Response 載入中...</span>
+          {isLoadingIPs && <span className="mr-2">IPs 載入中...</span>}
+          {isLoadingLogs && <span>AI Response 載入中...</span>}
+        </div>
+      )}
+
+      {/* 操作按鈕 */}
+      <div className="mt-4 flex gap-4">
+        <button
+          onClick={() => handleUpdateWAF(ips)}
+          disabled={updating || ips.length === 0}
+          className={`px-5 py-2 ${
+            updating || ips.length === 0
+              ? "bg-gray-400"
+              : "bg-green-500 hover:bg-green-600"
+          } text-white font-bold rounded-lg`}
+        >
+          {updating ? "更新中..." : "新增以上ip至 cloudflare waf 規則"}
+        </button>
+        <button
+          onClick={() =>
+            (window.location.href = "https://www.twister5.com.tw/")
+          }
+          className="px-5 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600"
+        >
+          取消
+        </button>
+      </div>
+      {/* 顯示 IPs */}
+      {!isLoadingIPs && ips.length > 0 && (
+        <div className="mt-4 p-4 bg-white rounded-md shadow">
+          <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
+          <div className="max-h-60 overflow-y-auto">
+            <ul className="space-y-1">
+              {ips.map((ip, index) => (
+                <li key={index} className="text-sm text-gray-700">
+                  {ip}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
     </div>
