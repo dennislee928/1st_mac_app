@@ -215,13 +215,13 @@ export default function Home() {
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
-        IP Information
+        IP 資訊 - 過去一小時自動化程式可能性高之ip address
       </h3>
 
       {/* 顯示從 Worker 獲取的 IPs */}
       {ips.length > 0 && (
         <div className="mt-4 p-4 bg-white rounded-md shadow">
-          <h4 className="text-xl font-semibold mb-2">Available IPs:</h4>
+          <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
           <ul className="space-y-1">
             {ips.map((ip, index) => (
               <li key={index} className="text-sm text-gray-700">
