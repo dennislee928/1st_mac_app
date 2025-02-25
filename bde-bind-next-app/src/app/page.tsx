@@ -343,8 +343,7 @@ export default function Home() {
                   <span className="text-[#9FEF00]">{ips.length}</span>
                 </h2>
                 <p className="text-gray-400 max-w-md">
-                  IPs of cyber incidents in the last 30 minutes were from
-                  potentially malicious IP addresses
+                  在過去的30分鐘內，對您的網域請求資源的IP地址中，被判定為具自動化攻擊風險的數量。
                 </p>
               </div>
               <Activity className="text-[#9FEF00] w-8 h-8" />
@@ -358,7 +357,7 @@ export default function Home() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="text-[#9FEF00] w-5 h-5" />
-                <h3 className="text-xl font-semibold">AI Security Analysis</h3>
+                <h3 className="text-xl font-semibold">Ollama AI 安全分析</h3>
               </div>
               <div className="prose prose-invert max-w-none">
                 {aiSuggestions.map((suggestion, index) => (
@@ -394,13 +393,13 @@ export default function Home() {
                 {isLoadingIPs && (
                   <div className="flex items-center gap-2">
                     <RefreshCw className="w-5 h-5 animate-spin text-[#9FEF00]" />
-                    <span>Loading IP data...</span>
+                    <span>獲取可疑IP中...</span>
                   </div>
                 )}
                 {isLoadingLogs && (
                   <div className="flex items-center gap-2">
                     <RefreshCw className="w-5 h-5 animate-spin text-[#9FEF00]" />
-                    <span>Processing AI analysis...</span>
+                    <span>進行 AI 分析中...</span>
                   </div>
                 )}
               </div>
@@ -431,7 +430,7 @@ export default function Home() {
               className="border-[#1E2D3D] hover:bg-[#1E2D3D]"
             >
               <X className="w-4 h-4 mr-2" />
-              Cancel
+              取消
             </Button>
           </div>
         )}
@@ -443,7 +442,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <AlertTriangle className="text-[#9FEF00] w-5 h-5" />
-                  <h3 className="text-xl font-semibold">Suspicious IPs</h3>
+                  <h3 className="text-xl font-semibold">可疑 IPs</h3>
                 </div>
                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                   <div className="grid gap-2">

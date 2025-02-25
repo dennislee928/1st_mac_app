@@ -53,9 +53,7 @@ export function AreaChart() {
             y: {
               beginAtZero: true,
               grid: {
-                border: {
-                  display: false,
-                },
+                display: true,
               },
             },
           },
@@ -127,9 +125,7 @@ export function BarChart() {
             y: {
               beginAtZero: true,
               grid: {
-                border: {
-                  display: false,
-                },
+                display: true,
               },
             },
           },

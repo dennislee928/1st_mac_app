@@ -49,7 +49,7 @@ const CollapsibleMenu = () => {
                   className="flex items-center px-3 py-2 text-sm text-gray-200 hover:bg-[#1E2D3D] rounded-md transition-colors"
                 >
                   <Shield size={16} className="mr-3 text-gray-400" />
-                  安全分析
+                  安全分析（開發中）
                 </a>
               </li>
               <li>
@@ -58,7 +58,7 @@ const CollapsibleMenu = () => {
                   className="flex items-center px-3 py-2 text-sm text-gray-200 hover:bg-[#1E2D3D] rounded-md transition-colors"
                 >
                   <AlertTriangle size={16} className="mr-3 text-gray-400" />
-                  可疑 IP 列表
+                  可疑 IP 列表（開發中）
                 </a>
               </li>
               <li>
@@ -67,7 +67,7 @@ const CollapsibleMenu = () => {
                   className="flex items-center px-3 py-2 text-sm text-gray-200 hover:bg-[#1E2D3D] rounded-md transition-colors"
                 >
                   <Activity size={16} className="mr-3 text-gray-400" />
-                  性能監控
+                  性能監控 （開發中）
                 </a>
               </li>
               <li>
@@ -76,7 +76,7 @@ const CollapsibleMenu = () => {
                   className="flex items-center px-3 py-2 text-sm text-gray-200 hover:bg-[#1E2D3D] rounded-md transition-colors"
                 >
                   <Settings size={16} className="mr-3 text-gray-400" />
-                  設置
+                  設置 （開發中）
                 </a>
               </li>
             </ul>
