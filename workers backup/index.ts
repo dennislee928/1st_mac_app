@@ -89,8 +89,15 @@ __name(fetchIPsonly, "fetchIPsonly");
 
 async function fetchAISuggestions(ipArray) {
   try {
-    const prompt = ` you are anexperienced cloudflare consultant.The IPs are: ${ipArray} in the last 10 minutes with a BotScore less than 5 on Cloudflare analyze these ips and provide professional security recommendations, "`;
+    console.log("Starting AI suggestions request for IPs:", ipArray);
 
+    const prompt = `你是一位經驗豐富的 Cloudflare 安全顧問。這些是過去30分鐘內 BotScore 低於 60 的 IP: ${ipArray}。請分析這些 IP 並提供專業的安全建議。`;
+
+    // 設置 15 秒超時
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    console.log("Sending request to Cloudflare AI...");
     const response = await fetch(
       "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct",
       {
@@ -102,7 +109,7 @@ async function fetchAISuggestions(ipArray) {
         },
         body: JSON.stringify({
           prompt: prompt,
-          max_tokens: 2048,
+          max_tokens: 1024, // 減少 token 數量
           temperature: 0.7,
           text: JSON.stringify({
             detected_bot_ips: ipArray,
@@ -110,16 +117,27 @@ async function fetchAISuggestions(ipArray) {
             log_format: "structured JSON",
           }),
         }),
+        signal: controller.signal,
       }
     );
 
-    const data = await response.json();
-    console.log("Full AI Response:", JSON.stringify(data, null, 2));
+    clearTimeout(timeoutId);
 
-    return data.result?.response || "No suggestions available";
+    if (!response.ok) {
+      console.error("AI API responded with status:", response.status);
+      throw new Error(`AI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("AI response received, length:", data.result?.response?.length);
+
+    return data.result?.response || "無法獲取 AI 建議";
   } catch (error) {
-    console.error("Error fetching AI suggestions:", error);
-    return "Error retrieving suggestions";
+    console.error("Error in fetchAISuggestions:", error);
+    if (error.name === "AbortError") {
+      return "AI 回應超時，請稍後再試";
+    }
+    return "無法獲取 AI 建議：" + error.message;
   }
 }
 
@@ -306,17 +324,23 @@ export default {
     if (url.pathname === "/api/fetch-logs" && request.method === "GET") {
       console.log("Handling /fetch-logs");
       try {
-        // 設置超時時間
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout")), 50000)
-        );
+        // 先獲取 IPs
+        console.log("Fetching IPs...");
+        const ips = await fetchIPsonly();
+        console.log("IPs fetched:", ips);
 
-        // 並行執行兩個請求
-        const [ips, aiSuggestions] = await Promise.all([
-          Promise.race([fetchIPsonly(), timeoutPromise]),
-          Promise.race([fetchAISuggestions([]), timeoutPromise]),
-        ]);
+        // 只有在有 IPs 時才請求 AI 建議
+        let aiSuggestions = "";
+        if (ips.length > 0) {
+          console.log("Fetching AI suggestions...");
+          aiSuggestions = await fetchAISuggestions(ips);
+          console.log("AI suggestions fetched");
+        } else {
+          console.log("No IPs found, skipping AI suggestions");
+          aiSuggestions = "目前沒有發現可疑的 IP";
+        }
 
+        // 返回結果
         return new Response(
           JSON.stringify({
             ips,
@@ -328,15 +352,19 @@ export default {
             headers: {
               "Content-Type": "application/json",
               "Access-Control-Allow-Origin": "*",
+              "Cache-Control": "no-cache",
             },
           }
         );
       } catch (error) {
         console.error("Error in fetch-logs:", error);
+
+        // 返回更詳細的錯誤信息
         return new Response(
           JSON.stringify({
             error: "Request processing failed",
             details: error.message,
+            timestamp: new Date().toISOString(),
           }),
           {
             status: 500,
