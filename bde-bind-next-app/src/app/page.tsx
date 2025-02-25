@@ -337,7 +337,7 @@ export default function Home() {
                 : "bg-green-500 hover:bg-green-600"
             } text-white font-bold rounded-lg`}
           >
-            {updating ? "更新中..." : "新增以上ip至 cloudflare waf 規則"}
+            {updating ? "更新中..." : "新增此些ip至 cloudflare waf 規則"}
           </button>
           <button
             onClick={() =>
