@@ -268,10 +268,50 @@ export default function Home() {
       {/* 顯示 AI 建議 */}
       {!isLoadingLogs && aiSuggestions.length > 0 && (
         <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
-          <h4 className="text-2xl font-semibold mb-2">Ollama AI 建議:</h4>
-          <div className="text-lg text-gray-800">
+          <h4 className="text-2xl font-semibold mb-4 text-indigo-700">
+            Ollama AI 建議:
+          </h4>
+          <div className="prose prose-lg max-w-none text-gray-800">
             {aiSuggestions.map((suggestion, index) => (
-              <p key={index}>{suggestion}</p>
+              <div
+                key={index}
+                className="markdown-content"
+                style={{
+                  whiteSpace: "pre-wrap",
+                  lineHeight: "1.8",
+                  fontSize: "1.1rem",
+                }}
+              >
+                {suggestion.split("**").map((part, i) => {
+                  if (i % 2 === 1) {
+                    // 粗體部分
+                    return (
+                      <strong
+                        key={i}
+                        className="text-indigo-700 text-xl block my-3"
+                      >
+                        {part}
+                      </strong>
+                    );
+                  }
+                  // 一般文字部分，處理項目符號
+                  return (
+                    <div key={i} className="ml-4 mb-2">
+                      {part.split("*").map((bullet, j) => {
+                        if (j % 2 === 1) {
+                          // 項目符號
+                          return (
+                            <li key={j} className="list-disc ml-6 my-2">
+                              {bullet}
+                            </li>
+                          );
+                        }
+                        return bullet;
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             ))}
           </div>
         </div>
@@ -286,27 +326,29 @@ export default function Home() {
       )}
 
       {/* 操作按鈕 */}
-      <div className="mt-4 flex gap-4">
-        <button
-          onClick={() => handleUpdateWAF(ips)}
-          disabled={updating || ips.length === 0}
-          className={`px-5 py-2 ${
-            updating || ips.length === 0
-              ? "bg-gray-400"
-              : "bg-green-500 hover:bg-green-600"
-          } text-white font-bold rounded-lg`}
-        >
-          {updating ? "更新中..." : "新增以上ip至 cloudflare waf 規則"}
-        </button>
-        <button
-          onClick={() =>
-            (window.location.href = "https://www.twister5.com.tw/")
-          }
-          className="px-5 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600"
-        >
-          取消
-        </button>
-      </div>
+      {!isLoadingLogs && aiSuggestions.length > 0 && (
+        <div className="mt-4 flex gap-4">
+          <button
+            onClick={() => handleUpdateWAF(ips)}
+            disabled={updating || ips.length === 0}
+            className={`px-5 py-2 ${
+              updating || ips.length === 0
+                ? "bg-gray-400"
+                : "bg-green-500 hover:bg-green-600"
+            } text-white font-bold rounded-lg`}
+          >
+            {updating ? "更新中..." : "新增以上ip至 cloudflare waf 規則"}
+          </button>
+          <button
+            onClick={() =>
+              (window.location.href = "https://www.twister5.com.tw/")
+            }
+            className="px-5 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600"
+          >
+            取消
+          </button>
+        </div>
+      )}
       {/* 顯示 IPs */}
       {!isLoadingIPs && ips.length > 0 && (
         <div className="mt-4 p-4 bg-white rounded-md shadow">
