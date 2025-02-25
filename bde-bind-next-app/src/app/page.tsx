@@ -63,6 +63,8 @@ export default function Home() {
   // 添加 intervalRef
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const router = useRouter();
+
   useEffect(() => {
     // 動態導入並初始化 iplookupapi
     const initializeIpApi = async () => {
@@ -258,6 +260,28 @@ export default function Home() {
     }
   };
 
+  // 新增處理 WAF 更新的函數
+  const handleUpdateWAF = async (ips: string[]) => {
+    try {
+      const response = await fetch("/api/update-waf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ips }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`WAF update failed: ${response.status}`);
+      }
+
+      alert("已成功更新 WAF 規則");
+    } catch (error) {
+      console.error("Error updating WAF:", error);
+      alert("更新 WAF 規則失敗");
+    }
+  };
+
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
@@ -293,16 +317,18 @@ export default function Home() {
           <br />
           <div className="mt-4 flex gap-4">
             <button
-              onClick={() => verifyIPs(allRecognizedIps)}
+              onClick={() => handleUpdateWAF(allRecognizedIps)}
               className="px-5 py-2 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600"
             >
-              Verify Selected IPs
+              新增以上ip至 cloudflare waf 規則
             </button>
             <button
-              onClick={verifyAllIPs}
+              onClick={() =>
+                (window.location.href = "https://www.twister5.com.tw/")
+              }
               className="px-5 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600"
             >
-              Verify All IPs
+              取消
             </button>
           </div>
         </div>
