@@ -89,17 +89,30 @@ __name(fetchIPsonly, "fetchIPsonly");
 
 async function fetchAISuggestions(ipArray) {
   try {
-    console.log("Starting AI suggestions request for IPs:", ipArray);
+    console.log(`Starting AI suggestions request for ${ipArray.length} IPs`);
 
-    const prompt = `你是一位經驗豐富的 Cloudflare 安全顧問。這些是過去30分鐘內 BotScore 低於 60 的 IP: ${ipArray}。請分析這些 IP 並提供專業的安全建議。`;
+    // 如果 IP 數量過多，只取前 20 個進行分析
+    const analyzedIps = ipArray.slice(0, 20);
 
-    // 設置 15 秒超時
+    const prompt = `
+作為資安專家，請分析以下 IP (僅列出前20個，共 ${ipArray.length} 個):
+${analyzedIps.join("\n")}
+
+請提供：
+1. 這些 IP 的地理位置分布特點
+2. 是否存在可疑的自動化行為模式
+3. 建議的防護措施
+
+請用繁體中文回答，並保持簡潔專業。
+    `.trim();
+
+    // 延長超時時間到 25 秒
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    console.log("Sending request to Cloudflare AI...");
+    console.log("Sending request to AI...");
     const response = await fetch(
-      "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct",
+      "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-2-7b-chat", // 使用較小的模型
       {
         method: "POST",
         headers: {
@@ -109,13 +122,8 @@ async function fetchAISuggestions(ipArray) {
         },
         body: JSON.stringify({
           prompt: prompt,
-          max_tokens: 1024, // 減少 token 數量
-          temperature: 0.7,
-          text: JSON.stringify({
-            detected_bot_ips: ipArray,
-            timeframe: "last 30 minutes",
-            log_format: "structured JSON",
-          }),
+          max_tokens: 512, // 減少 token 數量
+          temperature: 0.5, // 創造穩定甜蜜點
         }),
         signal: controller.signal,
       }
@@ -124,20 +132,22 @@ async function fetchAISuggestions(ipArray) {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error("AI API responded with status:", response.status);
       throw new Error(`AI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log("AI response received, length:", data.result?.response?.length);
+    console.log("AI response received");
 
-    return data.result?.response || "無法獲取 AI 建議";
+    return (
+      data.result?.response ||
+      `已分析 ${ipArray.length} 個可疑 IP，但無法獲取詳細建議。請查看 IP 列表並考慮手動封鎖。`
+    );
   } catch (error) {
     console.error("Error in fetchAISuggestions:", error);
     if (error.name === "AbortError") {
-      return "AI 回應超時，請稍後再試";
+      return `已偵測到 ${ipArray.length} 個可疑 IP。AI 分析超時，請直接查看 IP 列表。`;
     }
-    return "無法獲取 AI 建議：" + error.message;
+    return `偵測到 ${ipArray.length} 個可疑 IP。AI 分析暫時無法使用：${error.message}`;
   }
 }
 
