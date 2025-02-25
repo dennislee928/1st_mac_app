@@ -81,25 +81,6 @@ export default function Home() {
 
     initializeIpApi();
   }, []);
-
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const response = await fetch("/api/fetch-logs");
-        const data: { aiSuggestions?: string } = await response.json(); // Explicit typing
-        if (response.ok) {
-          setAiSuggestions([data.aiSuggestions || ""]);
-        } else {
-          console.error("Failed to fetch logs:", response.status);
-        }
-      } catch (error) {
-        console.error("Error fetching logs:", error);
-      }
-    };
-
-    fetchLogs();
-  }, []);
-
   // 獲取 IPs 的 useEffect
   useEffect(() => {
     const fetchIPsFromWorker = async () => {
@@ -121,6 +102,26 @@ export default function Home() {
     };
 
     fetchIPsFromWorker();
+  }, []);
+
+  //獲取ai建議
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const response = await fetch("/api/fetch-logs");
+        const data: { aiSuggestions?: string } = await response.json(); // Explicit typing
+        if (response.ok) {
+          setAiSuggestions([data.aiSuggestions || ""]);
+        } else {
+          console.error("Failed to fetch logs:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching logs:", error);
+      }
+    };
+
+    fetchLogs();
   }, []);
 
   // 獲取 Logs 的 useEffect (包含 IPs 和 AI 建議)
