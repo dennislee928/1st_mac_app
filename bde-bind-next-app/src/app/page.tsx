@@ -96,13 +96,11 @@ export default function Home() {
   useEffect(() => {
     const fetchIPsFromWorker = async () => {
       try {
-        const response = await fetch("/api/fetch-logs");
+        const response = await fetch("/api/get-ips-only");
         if (response.ok) {
-          const data = (await response.json()) as WorkerResponse;
-          if (data.ips && Array.isArray(data.ips)) {
-            setIps(data.ips);
-            console.log("Fetched IPs from worker:", data.ips);
-          }
+          const ips = (await response.json()) as string[];
+          setIps(ips);
+          console.log("Fetched IPs from worker:", ips);
         } else {
           console.error("Failed to fetch IPs:", response.status);
         }

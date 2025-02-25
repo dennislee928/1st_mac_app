@@ -7,22 +7,89 @@ var CF_AUTH_MAIL = "cloudflare.admin@twister5.com.tw";
 var CF_AUTH_KEY = "daf08ebac1a4805ecb820fa699ca0d8b0b9e2";
 var ZONE_ID = "15e2496da3b1ecfdb51f3ff011634cb2";
 var RULESET_ID = "92c8e0851be6450c9b09dbdcbbefd38e";
-var RULE_ID = "53f5ec24326648549d91674ce9b4b089";
+var RULE_ID = "ee5369e5c6a248b7b755e75c31c7ef60";
+var Block_RULE_ID = "f778bd84056045d2a867acfbe1231766";
+//
+
+// Function to fetch IPs only
+async function fetchIPsonly() {
+  const endTime = new Date();
+  const startTime = new Date(endTime - 1 * 60 * 1000); // 最近1分鐘
+
+  const graphqlQuery = {
+    operationName: "GetSecuritySampledLogs",
+    variables: {
+      zoneTag: ZONE_ID,
+      accountTag: "e1ab85903e4701fa311b5270c16665f6",
+      filter: {
+        AND: [
+          {
+            datetime_geq: startTime.toISOString(),
+            datetime_leq: endTime.toISOString(),
+            requestSource: "eyeball",
+          },
+          {
+            botScore_leq: 60,
+          },
+        ],
+      },
+    },
+    query: `query GetSecuritySampledLogs($zoneTag: string, $filter: ZoneHttpRequestsAdaptiveFilter_InputObject) {
+      viewer {
+        scope: zones(filter: {zoneTag: $zoneTag}) {
+          httpRequestsAdaptive(
+            filter: $filter,
+            limit: 1000,
+            orderBy: ["datetime_DESC"]
+          ) {
+            clientIP
+            botScore
+            __typename
+          }
+          __typename
+        }
+        __typename
+      }
+    }`,
+  };
+
+  try {
+    const response = await fetch(
+      "https://api.cloudflare.com/client/v4/graphql",
+      {
+        method: "POST",
+        headers: {
+          "X-Auth-Email": CF_AUTH_MAIL,
+          "X-Auth-Key": CF_AUTH_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(graphqlQuery),
+      }
+    );
+
+    const data = await response.json();
+    const ips = new Set();
+
+    if (data?.data?.viewer?.scope?.[0]?.httpRequestsAdaptive) {
+      data.data.viewer.scope[0].httpRequestsAdaptive.forEach((request) => {
+        if (request.clientIP && request.botScore <= 60) {
+          ips.add(request.clientIP);
+        }
+      });
+    }
+
+    return Array.from(ips);
+  } catch (error) {
+    console.error("Error fetching IPs:", error);
+    return [];
+  }
+}
+
+__name(fetchIPsonly, "fetchIPsonly");
 
 async function fetchAISuggestions(ipArray) {
   try {
-    // Limit the number of IPs to avoid exceeding token limits
-    const MAX_IP_COUNT = 10; // Limit to the top 10 IPs, or adjust as needed
-    const limitedIpArray = ipArray.slice(0, MAX_IP_COUNT);
-
-    // Build the prompt string with a smaller number of IPs
-    const prompt =
-      "Analyze these security logs and provide professional security recommendations. They are: " +
-      limitedIpArray +
-      " in the last 30 minutes that are very possible automatic bots.";
-
-    // Log the prompt
-    console.log("Prompt being sent to Cloudflare AI:", prompt);
+    const prompt = `Analyze these security logs and provide professional security recommendations, act like experienced cloudflare consultant.The IPs are: ${ipArray} in the last 1 minutes with a BotScore less than 5 on Cloudflare. "`;
 
     const response = await fetch(
       "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct",
@@ -31,12 +98,14 @@ async function fetchAISuggestions(ipArray) {
         headers: {
           "Content-Type": "application/json",
           "X-Auth-Email": CF_AUTH_MAIL,
-          "X-Auth-Key": CF_AUTH_KEY, // Or use Bearer token if required
+          "X-Auth-Key": CF_AUTH_KEY,
         },
         body: JSON.stringify({
-          prompt: prompt, // Use the built prompt here
+          prompt: prompt,
+          max_tokens: 2048,
+          temperature: 0.7,
           text: JSON.stringify({
-            detected_bot_ips: limitedIpArray, // Only send the limited IPs
+            detected_bot_ips: ipArray,
             timeframe: "last 30 minutes",
             log_format: "structured JSON",
           }),
@@ -44,15 +113,8 @@ async function fetchAISuggestions(ipArray) {
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `HTTP error! Status: ${response.status}. Response: ${errorText}`
-      );
-    }
-
     const data = await response.json();
-    console.log("AI Response:", JSON.stringify(data, null, 2));
+    console.log("Full AI Response:", JSON.stringify(data, null, 2));
 
     return data.result?.response || "No suggestions available";
   } catch (error) {
@@ -65,7 +127,7 @@ __name(fetchAISuggestions, "fetchAISuggestions");
 
 async function fetchSecurityLogs() {
   const endTime = /* @__PURE__ */ new Date();
-  const startTime = new Date(endTime - 30 * 60 * 1e3);
+  const startTime = new Date(endTime - 1 * 60 * 1e3);
   const graphqlQuery = {
     operationName: "GetSecuritySampledLogs",
     variables: {
@@ -172,22 +234,93 @@ async function updateWAFRule(newIps) {
   }
 }
 __name(updateWAFRule, "updateWAFRule");
+//
+async function updateWAFRule_blocking(newIps) {
+  try {
+    console.log("Preparing to update WAF rule with blocking action...");
+    console.log("IPs to block:", newIps);
+
+    const expression = `ip.src in {${newIps.join(
+      " "
+    )}} or not cf.edge.server_port in {80 443}`;
+    const ruleData = {
+      action: "block",
+      description: "Automation of WAF rules creation (blocking).",
+      enabled: true,
+      expression,
+    };
+
+    console.log("Corrected API URL for blocking rule:", apiUrl);
+    console.log("Rule data being sent:", ruleData);
+
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/rulesets/${RULESET_ID}/rules/f778bd84056045d2a867acfbe1231766`,
+      {
+        method: "PATCH",
+        headers: {
+          "X-Auth-Email": CF_AUTH_MAIL,
+          "X-Auth-Key": CF_AUTH_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ruleData),
+      }
+    );
+
+    const data = await response.json();
+    console.log("Response from Cloudflare WAF update (blocking):", data);
+
+    if (!response.ok) {
+      console.error("Failed to update WAF rule (blocking):", data);
+      throw new Error(
+        `Failed to update WAF rule (blocking): ${JSON.stringify(data)}`
+      );
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error updating WAF rule (blocking):", error);
+    throw error;
+  }
+}
+
+__name(updateWAFRule_blocking, "updateWAFRule_blocking");
+
+//
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    console.log("Received request at:", url.pathname); // Log the path for all incoming requests
+    //
+    if (url.pathname === "/get-ips-only" && request.method === "GET") {
+      console.log("Handling /get-ips-only");
+      const ips = await fetchIPsonly();
+      return new Response(JSON.stringify(ips), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Handle fetch logs request
-    if (url.pathname === "/fetch-logs" && request.method === "GET") {
-      const { ips, needsUpdate, aiSuggestions } = await fetchSecurityLogs();
-      return new Response(JSON.stringify({ ips, needsUpdate, aiSuggestions }), {
+    if (url.pathname === "/api/fetch-logs" && request.method === "GET") {
+      //
+      console.log("Handling /fetch-logs");
+
+      //
+      const ips = await fetchIPsonly();
+      return new Response(JSON.stringify({ ips }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
     // Handle update WAF request
-    if (url.pathname === "/update-waf" && request.method === "POST") {
+    if (url.pathname === "/api/update-waf" && request.method === "POST") {
+      //
+      console.log("Handling /update-waf");
+
+      //
       try {
         const { ips } = await request.json();
         await updateWAFRule(ips);
@@ -199,7 +332,10 @@ export default {
     }
 
     // Handle fetch AI suggestions request
-    if (url.pathname === "/fetch-ai-suggestions" && request.method === "POST") {
+    if (
+      url.pathname === "/api/fetch-ai-suggestions" &&
+      request.method === "POST"
+    ) {
       try {
         const { ips } = await request.json();
         const aiSuggestions = await fetchAISuggestions(ips);
@@ -213,6 +349,32 @@ export default {
       }
     }
 
+    //
+
+    // Handle update WAF blocking request
+    if (
+      url.pathname === "/api/update-waf-blocking" &&
+      request.method === "POST"
+    ) {
+      //
+      console.log("Handling /update-Blocking-WAF");
+
+      //
+      try {
+        console.log("Handling WAF blocking update...");
+        const { ips } = await request.json();
+        console.log("Received IPs for blocking:", ips);
+        await updateWAFRule_blocking(ips);
+        return new Response("WAF blocking rules updated successfully", {
+          status: 200,
+        });
+      } catch (error) {
+        console.error("Invalid request payload (blocking):", error);
+        return new Response("Invalid request payload", { status: 400 });
+      }
+    }
+
     return new Response("Not Found", { status: 404 });
   },
 };
+//
