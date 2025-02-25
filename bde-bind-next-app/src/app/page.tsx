@@ -2,11 +2,43 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import iplookupapi from "@everapi/iplookupapi-js";
 import { useRouter } from "next/navigation";
 //
-import dnslookup from "./pages/api/dnslookup";
+// import dnslookup from "./pages/api/dnslookup";
 //
+
+interface IpLookupResponse {
+  data: {
+    ip: string;
+    location: {
+      city: {
+        name: string;
+      };
+      region: {
+        name: string;
+      };
+      country: {
+        name: string;
+      };
+    };
+    security: {
+      is_vpn: boolean | null;
+      is_proxy: boolean | null;
+      threat_score: number | null;
+    };
+  };
+}
+
+interface ApiResponse {
+  ip: IpLookupResponse;
+  dns: any;
+}
+
+interface WorkerResponse {
+  ips: string[];
+  aiSuggestions?: string;
+}
+
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [updating, setUpdating] = useState(false);
@@ -17,13 +49,30 @@ export default function Home() {
   const [verifiedIpInfo, setVerifiedIpInfo] = useState<any[]>([]);
   const [verifiedAllIpsInfo, setVerifiedAllIpsInfo] = useState<any[]>([]);
 
-  // Initialize the IP lookup API with the provided key
-  const ipApi = new iplookupapi(
-    "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
-  );
+  // 添加一個 state 來存儲動態導入的 iplookupapi
+  const [ipApi, setIpApi] = useState<any>(null);
 
-  // Ref to hold interval ID
+  // 添加 intervalRef
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // 動態導入並初始化 iplookupapi
+    const initializeIpApi = async () => {
+      try {
+        const { default: iplookupapi } = await import(
+          "@everapi/iplookupapi-js"
+        );
+        const api = new iplookupapi(
+          "ipl_live_PXUl1VZE3GQ3QgG9QjvMlsfyDzLmrUPxKuBXnEDH"
+        );
+        setIpApi(api);
+      } catch (error) {
+        console.error("Failed to initialize IP API:", error);
+      }
+    };
+
+    initializeIpApi();
+  }, []);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -43,35 +92,46 @@ export default function Home() {
     fetchLogs();
   }, []);
 
-  // Function to verify selected valid IPs using iplookupapi
+  // 添加一個新的 useEffect 來獲取 IPs
+  useEffect(() => {
+    const fetchIPsFromWorker = async () => {
+      try {
+        const response = await fetch("/api/fetch-logs");
+        if (response.ok) {
+          const data = (await response.json()) as WorkerResponse;
+          if (data.ips && Array.isArray(data.ips)) {
+            setIps(data.ips);
+            console.log("Fetched IPs from worker:", data.ips);
+          }
+        } else {
+          console.error("Failed to fetch IPs:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching IPs:", error);
+      }
+    };
+
+    fetchIPsFromWorker();
+  }, []); // 只在組件加載時執行一次
+
+  // 修改 verifyIPs 函數來使用 route.ts 的 IP lookup endpoint
   const verifyIPs = async (validIps: string[]) => {
     const verifiedIps: any[] = [];
     for (const ip of validIps) {
-      // Start of Selection
       try {
-        // 首先進行 DNS 查詢
-        const response = await fetch(`/api/dnslookup?ip=${ip}`);
+        // 使用我們的 API route 進行查詢
+        const response = await fetch(`/api/route?ip=${ip}`);
         if (!response.ok) {
-          throw new Error(`DNS 查詢失敗：${response.statusText}`);
+          throw new Error(`API request failed with status ${response.status}`);
         }
-        const dnsResult = await response.json();
-
-        // 如果 ipApi 已初始化，則進行 IP 查詢
-        let ipLookupResult = null;
-        if (ipApi) {
-          ipLookupResult = await ipApi.lookup(ip);
-        }
-
-        // 合併結果
+        const result = (await response.json()) as ApiResponse;
         verifiedIps.push({
-          ...ipLookupResult,
-          dns: dnsResult,
           ip: ip,
-        });
-
-        console.log(`Verification result for ${ip}:`, {
-          ipLookup: ipLookupResult,
-          dns: dnsResult,
+          city: result.ip.data.location.city.name,
+          region: result.ip.data.location.region.name,
+          country: result.ip.data.location.country.name,
+          security: result.ip.data.security,
+          dns: result.dns,
         });
       } catch (error) {
         console.error(`Error verifying IP ${ip}:`, error);
@@ -157,15 +217,51 @@ export default function Home() {
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
-        AI Suggestions
+        IP Information
       </h3>
-      <button
-        onClick={fetchLogs}
-        className="px-5 py-2 bg-red-600 text-white font-bold rounded-lg"
-      >
-        Fetch AI Suggestions
-      </button>
-      <br />
+
+      {/* 顯示從 Worker 獲取的 IPs */}
+      {ips.length > 0 && (
+        <div className="mt-4 p-4 bg-white rounded-md shadow">
+          <h4 className="text-xl font-semibold mb-2">Available IPs:</h4>
+          <ul className="space-y-1">
+            {ips.map((ip, index) => (
+              <li key={index} className="text-sm text-gray-700">
+                {ip}
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={() => verifyIPs(ips)}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Verify All IPs
+          </button>
+        </div>
+      )}
+
+      {/* 顯示驗證結果 */}
+      {verifiedIpInfo.length > 0 && (
+        <div className="mt-4 p-4 bg-white rounded-md shadow">
+          <h4 className="text-xl font-semibold mb-2">Verification Results:</h4>
+          <ul className="space-y-2">
+            {verifiedIpInfo.map((info, index) => (
+              <li key={index} className="text-sm">
+                <div className="font-medium">{info.ip}</div>
+                <div className="ml-4 text-gray-600">
+                  Location: {info.city}, {info.region}, {info.country}
+                </div>
+                {info.dns && (
+                  <div className="ml-4 text-gray-500 text-xs">
+                    DNS Info: {JSON.stringify(info.dns, null, 2)}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {showAISuggestions && (
         <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
           <h4 className="text-2xl font-semibold mb-2">AI Suggestions:</h4>
