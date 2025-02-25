@@ -324,7 +324,11 @@ export default function Home() {
       <div className="fixed top-4 left-4 z-50">
         <CollapsibleMenu />
       </div>
-
+      <div
+        className="cf-turnstile"
+        data-sitekey="0x4AAAAAAA-isqmdB982aQzO"
+        data-callback="javascriptCallback"
+      ></div>
       {/* 主要內容區域，添加足夠的左側邊距以避免與 CollapsibleMenu 重疊 */}
       <div className="container mx-auto py-12 px-4 pb-24 ml-16 sm:ml-20">
         {/* Header */}
