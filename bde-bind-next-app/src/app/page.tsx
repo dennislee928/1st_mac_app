@@ -77,6 +77,7 @@ interface LogsResponse {
 
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [updating, setUpdating] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -93,6 +94,8 @@ export default function Home() {
   >([]);
   const [isLoadingIPs, setIsLoadingIPs] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [updatingChallenge, setUpdatingChallenge] = useState(false);
+  const [updatingBlock, setUpdatingBlock] = useState(false);
 
   // 添加一個 state 來存儲動態導入的 iplookupapi
   const [ipApi, setIpApi] = useState<{
@@ -265,36 +268,104 @@ export default function Home() {
     }
   };
 
+  // 新增一個函數來分割 IP 列表
+  const splitIpsIntoChunks = (
+    ips: string[],
+    maxExpressionLength: number = 3800
+  ) => {
+    const chunks: string[][] = [];
+    let currentChunk: string[] = [];
+    let currentLength = 0;
+
+    ips.forEach((ip) => {
+      // 計算新增這個 IP 後的表達式長度（包含分隔符號）
+      const newLength = currentLength + ip.length + 1; // +1 為空格
+
+      if (newLength > maxExpressionLength) {
+        chunks.push(currentChunk);
+        currentChunk = [ip];
+        currentLength = ip.length;
+      } else {
+        currentChunk.push(ip);
+        currentLength = newLength;
+      }
+    });
+
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk);
+    }
+
+    return chunks;
+  };
+
   // 修改處理 WAF 更新的函數
-  const handleUpdateWAF = async (ips: string[]) => {
+  const handleUpdateChallengeMode = async (ips: string[]) => {
     try {
-      setUpdating(true); // 添加載入狀態
-      console.log("Sending IPs to WAF update:", ips);
+      setUpdatingChallenge(true);
+      const ipChunks = splitIpsIntoChunks(ips);
 
-      const response = await fetch("/api/update-waf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ips }), // 確保與 updateWAFRule 的參數格式一致
-      });
+      for (let i = 0; i < ipChunks.length; i++) {
+        const response = await fetch("/api/update-waf", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ips: ipChunks[i],
+            ruleIndex: i, // 添加規則索引
+          }),
+        });
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`WAF update failed: ${response.status} - ${errorData}`);
+        if (!response.ok) {
+          throw new Error(`Challenge WAF update failed for chunk ${i + 1}`);
+        }
       }
 
-      console.log("WAF rules updated successfully");
-      alert("已成功更新 WAF 規則，這些 IP 將被 控管");
+      alert(`已成功更新 WAF 規則，${ips.length} 個 IP 將進入驗證模式`);
     } catch (error) {
-      console.error("Error updating WAF:", error);
+      console.error("Error updating Challenge WAF:", error);
       alert(
-        `更新 WAF 規則失敗: ${
+        `更新 WAF 驗證規則失敗: ${
           error instanceof Error ? error.message : "未知錯誤"
         }`
       );
     } finally {
-      setUpdating(false);
+      setUpdatingChallenge(false);
+    }
+  };
+
+  const handleUpdateBlockMode = async (ips: string[]) => {
+    try {
+      setUpdatingBlock(true);
+      const ipChunks = splitIpsIntoChunks(ips);
+
+      for (let i = 0; i < ipChunks.length; i++) {
+        const response = await fetch("/api/update-waf-blocking", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ips: ipChunks[i],
+            ruleIndex: i, // 添加規則索引
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Block WAF update failed for chunk ${i + 1}`);
+        }
+      }
+
+      alert(`已成功更新 WAF 規則，${ips.length} 個 IP 將被完全封鎖`);
+    } catch (error) {
+      console.error("Error updating Block WAF:", error);
+      alert(
+        `更新 WAF 封鎖規則失敗: ${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`
+      );
+    } finally {
+      setUpdatingBlock(false);
     }
   };
 
@@ -415,17 +486,31 @@ export default function Home() {
         {!isLoadingLogs && aiSuggestions.length > 0 && (
           <div className="flex gap-4 mb-8">
             <Button
-              onClick={() => handleUpdateWAF(ips)}
-              disabled={updating || ips.length === 0}
+              onClick={() => handleUpdateChallengeMode(ips)}
+              disabled={updatingChallenge || ips.length === 0}
               className={`gap-2 ${
-                updating || ips.length === 0
+                updatingChallenge || ips.length === 0
                   ? "bg-gray-600 cursor-not-allowed opacity-70"
                   : "bg-primary hover:bg-primary-hover text-black"
               }`}
             >
               <Shield className="w-4 h-4" />
-              {updating ? "更新 WAF 規則中..." : "將 IP 添加到 WAF 規則"}
+              {updatingChallenge ? "更新驗證規則中..." : "將 IP 加入驗證模式"}
             </Button>
+
+            <Button
+              onClick={() => handleUpdateBlockMode(ips)}
+              disabled={updatingBlock || ips.length === 0}
+              className={`gap-2 ${
+                updatingBlock || ips.length === 0
+                  ? "bg-gray-600 cursor-not-allowed opacity-70"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }`}
+            >
+              <AlertTriangle className="w-4 h-4" />
+              {updatingBlock ? "更新封鎖規則中..." : "將 IP 加入封鎖名單"}
+            </Button>
+
             <Button
               onClick={() =>
                 (window.location.href = "https://www.twister5.com.tw/")
