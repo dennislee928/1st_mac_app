@@ -263,35 +263,7 @@ export default function Home() {
         IP 資訊 - 過去30分鐘自動化程式可能性高之ip address
       </h3>
 
-      {/* 顯示載入狀態 */}
-      {(isLoadingIPs || isLoadingLogs) && (
-        <div className="flex items-center justify-center p-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
-          <span className="ml-2 text-indigo-600">載入中...</span>
-        </div>
-      )}
-
-      {/* 顯示從 Worker 獲取的 IPs */}
-      {!isLoadingIPs && ips.length > 0 && (
-        <div className="mt-4 p-4 bg-white rounded-md shadow">
-          <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
-          <ul className="space-y-1">
-            {ips.map((ip, index) => (
-              <li key={index} className="text-sm text-gray-700">
-                {ip}
-              </li>
-            ))}
-          </ul>
-          <button
-            onClick={() => verifyIPs(ips)}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Verify All IPs
-          </button>
-        </div>
-      )}
-
-      {/* 顯示 AI 建議 */}
+      {/* 顯示llm回應 */}
       {!isLoadingLogs && aiSuggestions.length > 0 && (
         <div className="mt-4 p-4 bg-white rounded-md shadow">
           <h4 className="text-xl font-semibold mb-2">AI 建議:</h4>
@@ -305,7 +277,7 @@ export default function Home() {
 
       {showAISuggestions && (
         <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
-          <h4 className="text-2xl font-semibold mb-2">AI Suggestions:</h4>
+          <h4 className="text-2xl font-semibold mb-2">AI 建議:</h4>
           <div className="text-lg text-gray-800">
             {aiSuggestions.length > 0 ? (
               <p>{aiSuggestions[0]}</p>
@@ -327,6 +299,35 @@ export default function Home() {
           >
             Verify All IPs
           </button>
+          {/* 顯示載入狀態 */}
+          {(isLoadingIPs || isLoadingLogs) && (
+            <div className="flex items-center justify-center p-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+              <span className="ml-2 text-indigo-600">載入中...</span>
+            </div>
+          )}
+
+          {/* 顯示從 Worker 獲取的 IPs */}
+          {!isLoadingIPs && ips.length > 0 && (
+            <div className="mt-4 p-4 bg-white rounded-md shadow">
+              <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
+              <ul className="space-y-1">
+                {ips.map((ip, index) => (
+                  <li key={index} className="text-sm text-gray-700">
+                    {ip}
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => verifyIPs(ips)}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Verify All IPs
+              </button>
+            </div>
+          )}
+
+          {/* 顯示 AI 建議 */}
 
           {verifiedIpInfo.length > 0 && (
             <div className="mt-4">
