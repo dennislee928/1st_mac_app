@@ -266,12 +266,30 @@ export default function Home() {
       {/* 顯示 AI 建議和相關按鈕 */}
       {!isLoadingLogs && aiSuggestions.length > 0 && (
         <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
-          <h4 className="text-2xl font-semibold mb-2">AI 建議:</h4>
+          <h4 className="text-2xl font-semibold mb-2">Ollama AI 建議:</h4>
           <div className="text-lg text-gray-800">
             {aiSuggestions.map((suggestion, index) => (
               <p key={index}>{suggestion}</p>
             ))}
           </div>
+          <br />
+          {/* 顯示從 Worker 獲取的 IPs */}
+          {!isLoadingIPs && ips.length > 0 && (
+            <div className="mt-4 p-4 bg-white rounded-md shadow">
+              <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
+              <div className="max-h-60 overflow-y-auto">
+                <ul className="space-y-1">
+                  {ips.map((ip, index) => (
+                    <li key={index} className="text-sm text-gray-700">
+                      {ip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <br />
           <div className="mt-4 flex gap-4">
             <button
               onClick={() => verifyIPs(allRecognizedIps)}
@@ -294,93 +312,6 @@ export default function Home() {
         <div className="flex items-center justify-center p-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
           <span className="ml-2 text-indigo-600">AI Response 載入中...</span>
-        </div>
-      )}
-
-      {/* 顯示從 Worker 獲取的 IPs */}
-      {!isLoadingIPs && ips.length > 0 && (
-        <div className="mt-4 p-4 bg-white rounded-md shadow">
-          <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
-          <div className="max-h-60 overflow-y-auto">
-            <ul className="space-y-1">
-              {ips.map((ip, index) => (
-                <li key={index} className="text-sm text-gray-700">
-                  {ip}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {showAISuggestions && (
-        <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
-          <h4 className="text-2xl font-semibold mb-2">AI Suggestions:</h4>
-          <div className="text-lg text-gray-800">
-            {aiSuggestions.length > 0 ? (
-              <p>{aiSuggestions[0]}</p>
-            ) : (
-              <p>No AI suggestions available.</p>
-            )}
-          </div>
-          <br />
-          <button
-            onClick={() => verifyIPs(allRecognizedIps)}
-            className="mt-4 ml-4 px-5 py-2 bg-green-500 text-white font-bold rounded-lg"
-          >
-            Verify Selected IPs
-          </button>
-
-          <button
-            onClick={verifyAllIPs}
-            className="mt-4 ml-4 px-5 py-2 bg-blue-500 text-white font-bold rounded-lg"
-          >
-            Verify All IPs
-          </button>
-
-          {verifiedIpInfo.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-xl font-semibold">
-                Verified Selected IP Information:
-              </h4>
-              <ul>
-                {verifiedIpInfo.map((info, index) => (
-                  <li key={index} className="text-sm text-gray-700">
-                    <div>
-                      {info.ip}: {info.city}, {info.region}, {info.country}
-                    </div>
-                    {info.dns && (
-                      <div className="ml-4 text-xs text-gray-600">
-                        DNS: {JSON.stringify(info.dns)}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {verifiedAllIpsInfo.length > 0 && (
-            <>
-              <div className="mt-4">
-                <h4 className="text-xl font-semibold">
-                  Verified All IPs Information:
-                </h4>
-                <ul>
-                  {verifiedAllIpsInfo.map((info, index) => (
-                    <li key={index} className="text-sm text-gray-700">
-                      {info.ip}: {info.city}, {info.region}, {info.country}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div
-                className="cf-turnstile"
-                data-sitekey="0x4AAAAAAA-YCu2j8t6ctWIF"
-                data-callback="javascriptCallback"
-              ></div>
-            </>
-          )}
         </div>
       )}
     </div>

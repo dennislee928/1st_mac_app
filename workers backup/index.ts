@@ -91,28 +91,24 @@ async function fetchAISuggestions(ipArray) {
   try {
     console.log(`Starting AI suggestions request for ${ipArray.length} IPs`);
 
-    // 如果 IP 數量過多，只取前 20 個進行分析
-    const analyzedIps = ipArray.slice(0, 20);
+    // 如果 IP 數量過多，只取前 15 個進行分析
+    const analyzedIps = ipArray.slice(0, 15);
 
     const prompt = `
-作為資安專家，請分析以下 IP (僅列出前20個，共 ${ipArray.length} 個):
+分析以下可疑 IP (顯示前15個，總共 ${ipArray.length} 個):
 ${analyzedIps.join("\n")}
 
-請提供：
-1. 這些 IP 的地理位置分布特點
-2. 是否存在可疑的自動化行為模式
-3. 建議的防護措施
+請簡要說明：
+1. IP類型分布 (IPv4/IPv6)
+2. 可能的自動化行為風險
+3. 建議的封鎖策略
 
-請用繁體中文回答，並保持簡潔專業。
+請用繁體中文回答，保持簡潔。
     `.trim();
 
-    // 延長超時時間到 25 秒
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
-
-    console.log("Sending request to AI...");
+    console.log("Sending request to AI with prompt length:", prompt.length);
     const response = await fetch(
-      "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-2-7b-chat", // 使用較小的模型
+      "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-2-7b-chat",
       {
         method: "POST",
         headers: {
@@ -122,32 +118,38 @@ ${analyzedIps.join("\n")}
         },
         body: JSON.stringify({
           prompt: prompt,
-          max_tokens: 512, // 減少 token 數量
-          temperature: 0.5, // 創造穩定甜蜜點
+          max_tokens: 256, // 進一步減少 token 數量
+          temperature: 0.3,
+          stream: false, // 確保不使用串流模式
         }),
-        signal: controller.signal,
       }
     );
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
-      throw new Error(`AI API error: ${response.status}`);
+      console.error("AI API error status:", response.status);
+      console.error(
+        "AI API error headers:",
+        Object.fromEntries(response.headers)
+      );
+      const errorText = await response.text();
+      console.error("AI API error response:", errorText);
+      throw new Error(`AI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log("AI response received");
+    console.log("AI response received successfully");
 
     return (
       data.result?.response ||
-      `已分析 ${ipArray.length} 個可疑 IP，但無法獲取詳細建議。請查看 IP 列表並考慮手動封鎖。`
+      `已分析 ${ipArray.length} 個可疑 IP。建議審查並考慮封鎖這些位址。`
     );
   } catch (error) {
-    console.error("Error in fetchAISuggestions:", error);
-    if (error.name === "AbortError") {
-      return `已偵測到 ${ipArray.length} 個可疑 IP。AI 分析超時，請直接查看 IP 列表。`;
-    }
-    return `偵測到 ${ipArray.length} 個可疑 IP。AI 分析暫時無法使用：${error.message}`;
+    console.error("Detailed error in fetchAISuggestions:", error);
+    return `已偵測到 ${ipArray.length} 個可疑 IP。
+建議：
+1. 檢查這些 IP 的訪問模式
+2. 考慮暫時封鎖高頻訪問的位址
+3. 監控是否有異常的請求模式`;
   }
 }
 
@@ -334,16 +336,27 @@ export default {
     if (url.pathname === "/api/fetch-logs" && request.method === "GET") {
       console.log("Handling /fetch-logs");
       try {
+        // 設置全局超時為 25 秒
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Request timeout after 25 seconds")),
+            25000
+          )
+        );
+
         // 先獲取 IPs
         console.log("Fetching IPs...");
-        const ips = await fetchIPsonly();
+        const ips = await Promise.race([fetchIPsonly(), timeoutPromise]);
         console.log("IPs fetched:", ips);
 
         // 只有在有 IPs 時才請求 AI 建議
         let aiSuggestions = "";
         if (ips.length > 0) {
           console.log("Fetching AI suggestions...");
-          aiSuggestions = await fetchAISuggestions(ips);
+          aiSuggestions = await Promise.race([
+            fetchAISuggestions(ips),
+            timeoutPromise,
+          ]);
           console.log("AI suggestions fetched");
         } else {
           console.log("No IPs found, skipping AI suggestions");
