@@ -13,11 +13,18 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts"
   },
   "dependencies": {
+    "@arwes/animated": "^1.0.0-alpha.23",
+    "@arwes/animation": "^1.0.0-alpha.19",
+    "@arwes/core": "^1.0.0-next.24051001",
+    "@arwes/react": "^1.0.0-next.24111501",
+    "@arwes/react-animated": "^1.0.0-alpha.23",
+    "@arwes/react-animator": "^1.0.0-alpha.23",
+    "@arwes/theme": "^1.0.0-alpha.23",
     "@everapi/iplookupapi-js": "^1.0.0",
     "@vitalets/google-translate-api": "^9.2.1",
     "next": "15.1.6",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.7",

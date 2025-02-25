@@ -3,6 +3,12 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatorGeneralProvider } from "@arwes/animation";
+//import { Arwes, StylesBaseline } from "@arwes/core";
+//
+import { Animator } from "@arwes/react-animator";
+import { Animated } from "@arwes/react-animated";
+import { Text } from "@arwes/react";
 //
 // import dnslookup from "./pages/api/dnslookup";
 //
@@ -48,6 +54,10 @@ interface LogsResponse {
   aiSuggestions: string;
   showAISuggestions: boolean;
 }
+
+const ANIMATOR_GENERAL = {
+  duration: { enter: 200, exit: 200 },
+};
 
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
@@ -279,123 +289,131 @@ export default function Home() {
   };
 
   return (
-    <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
-      <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
-        IP 資訊 - 過去30分鐘自動化程式可能性高之ip address
-      </h3>
-      {/* 顯示 AI 建議 */}
-      {!isLoadingLogs && aiSuggestions.length > 0 && (
-        <div className="mt-4 p-4 bg-white border-2 border-indigo-500 rounded-md shadow">
-          <h4 className="text-2xl font-semibold mb-4 text-indigo-700">
-            Ollama AI 建議:
-          </h4>
-          <div className="prose prose-lg max-w-none text-gray-800">
-            {aiSuggestions.map((suggestion, index) => (
-              <div
-                key={index}
-                className="markdown-content"
-                style={{
-                  whiteSpace: "pre-wrap",
-                  lineHeight: "1.8",
-                  fontSize: "1.1rem",
-                }}
-              >
-                {suggestion.split("**").map((part, i) => {
-                  if (i % 2 === 1) {
-                    // 粗體部分
-                    return (
-                      <strong
-                        key={i}
-                        className="text-indigo-700 text-xl block my-3"
-                      >
-                        {part}
-                      </strong>
-                    );
-                  }
-                  // 一般文字部分，處理項目符號
-                  return (
-                    <div key={i} className="ml-4 mb-2">
-                      {part.split("*").map((bullet, j) => {
-                        if (j % 2 === 1) {
-                          // 項目符號
-                          return (
-                            <li key={j} className="list-disc ml-6 my-2">
-                              {bullet}
-                            </li>
-                          );
-                        }
-                        return bullet;
-                      })}
+    <Animator active={true}>
+      <AnimatorGeneralProvider animator={ANIMATOR_GENERAL}>
+        <div className="min-h-screen bg-[#001010] text-cyan-500 p-8">
+          <main>
+            <div className="max-w-6xl mx-auto">
+              <h1 className="text-3xl font-extrabold mb-6">
+                IP 資訊 - 過去30分鐘自動化程式可能性高之ip address
+              </h1>
+
+              {/* 載入指示器 */}
+              {(isLoadingIPs || isLoadingLogs) && (
+                <div className="flex items-center justify-center p-4 text-cyan-400">
+                  {isLoadingIPs && (
+                    <div className="flex items-center mr-4">
+                      <LoadingSpinner />
+                      <span>IPs 載入中</span>
+                      <LoadingDots />
                     </div>
-                  );
-                })}
+                  )}
+                  {isLoadingLogs && (
+                    <div className="flex items-center">
+                      <LoadingSpinner />
+                      <span>AI Response 載入中</span>
+                      <LoadingDots />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 顯示 IPs */}
+              {!isLoadingIPs && ips.length > 0 && (
+                <Text as="h1" className="text-2xl font-bold mb-6">
+                  <h2 className="text-xl font-semibold mb-4">有疑慮之 IPs:</h2>
+                  <div className="max-h-60 overflow-y-auto">
+                    <ul className="space-y-1 text-cyan-300">
+                      {ips.map((ip, index) => (
+                        <li key={index} className="font-mono">
+                          {ip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Text>
+              )}
+
+              {/* 顯示 AI 建議 */}
+              {!isLoadingLogs && aiSuggestions.length > 0 && (
+                <Text as="h1" className="text-2xl font-bold mb-6">
+                  <h2 className="text-2xl font-semibold mb-4">
+                    Ollama AI 建議:
+                  </h2>
+                  <div className="prose prose-lg max-w-none text-cyan-300">
+                    {aiSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="markdown-content"
+                        style={{
+                          whiteSpace: "pre-wrap",
+                          lineHeight: "1.8",
+                          fontSize: "1.1rem",
+                        }}
+                      >
+                        {suggestion.split("**").map((part, i) => {
+                          if (i % 2 === 1) {
+                            return (
+                              <Text
+                                as="strong"
+                                key={i}
+                                className="text-cyan-400 text-xl block my-3"
+                              >
+                                {part}
+                              </Text>
+                            );
+                          }
+                          return (
+                            <div key={i} className="ml-4 mb-2">
+                              {part.split("*").map((bullet, j) => {
+                                if (j % 2 === 1) {
+                                  return (
+                                    <li
+                                      key={j}
+                                      className="list-disc ml-6 my-2 text-cyan-300"
+                                    >
+                                      {bullet}
+                                    </li>
+                                  );
+                                }
+                                return bullet;
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </Text>
+              )}
+
+              {/* 操作按鈕 */}
+              <div className="mt-6 flex gap-4">
+                <button
+                  onClick={() => handleUpdateWAF(ips)}
+                  disabled={updating || ips.length === 0}
+                  className={`px-5 py-2 ${
+                    updating || ips.length === 0
+                      ? "bg-gray-600"
+                      : "bg-cyan-900 hover:bg-cyan-800"
+                  } text-cyan-100 font-bold rounded-lg transition-colors`}
+                >
+                  {updating ? "更新中..." : "新增此些ip至 cloudflare waf 規則"}
+                </button>
+                <button
+                  onClick={() =>
+                    (window.location.href = "https://www.twister5.com.tw/")
+                  }
+                  className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-cyan-100 font-bold rounded-lg transition-colors"
+                >
+                  取消
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 載入指示器 */}
-      {(isLoadingIPs || isLoadingLogs) && (
-        <div className="flex items-center justify-center p-4">
-          {isLoadingIPs && (
-            <div className="flex items-center mr-4">
-              <LoadingSpinner />
-              <span>IPs 載入中</span>
-              <LoadingDots />
             </div>
-          )}
-          {isLoadingLogs && (
-            <div className="flex items-center">
-              <LoadingSpinner />
-              <span>AI Response 載入中</span>
-              <LoadingDots />
-            </div>
-          )}
+          </main>
         </div>
-      )}
+      </AnimatorGeneralProvider>
 
-      {/* 操作按鈕 */}
-      {!isLoadingLogs && aiSuggestions.length > 0 && (
-        <div className="mt-4 flex gap-4">
-          <button
-            onClick={() => handleUpdateWAF(ips)}
-            disabled={updating || ips.length === 0}
-            className={`px-5 py-2 ${
-              updating || ips.length === 0
-                ? "bg-gray-400"
-                : "bg-green-500 hover:bg-green-600"
-            } text-white font-bold rounded-lg`}
-          >
-            {updating ? "更新中..." : "新增此些ip至 cloudflare waf 規則"}
-          </button>
-          <button
-            onClick={() =>
-              (window.location.href = "https://www.twister5.com.tw/")
-            }
-            className="px-5 py-2 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600"
-          >
-            取消
-          </button>
-        </div>
-      )}
-      {/* 顯示 IPs */}
-      {!isLoadingIPs && ips.length > 0 && (
-        <div className="mt-4 p-4 bg-white rounded-md shadow">
-          <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
-          <div className="max-h-60 overflow-y-auto">
-            <ul className="space-y-1">
-              {ips.map((ip, index) => (
-                <li key={index} className="text-sm text-gray-700">
-                  {ip}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {/* 在 return 後添加樣式 */}
       <style jsx>{`
         .loading-dots {
           display: inline-block;
@@ -405,6 +423,7 @@ export default function Home() {
           animation: dotBounce 1.4s infinite;
           display: inline-block;
           margin: 0 2px;
+          color: #0ff;
         }
 
         .dot:nth-child(2) {
@@ -426,6 +445,6 @@ export default function Home() {
           }
         }
       `}</style>
-    </div>
+    </Animator>
   );
 }

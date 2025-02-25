@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"app/page.tsx -> @everapi/iplookupapi-js\":{\"id\":\"app/page.tsx -> @everapi/iplookupapi-js\",\"files\":[\"static/chunks/_app-pages-browser_node_modules_everapi_iplookupapi-js_index_js.js\"]}}"
