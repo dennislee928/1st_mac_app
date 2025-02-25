@@ -293,7 +293,7 @@ export default {
 
     console.log("Received request at:", url.pathname); // Log the path for all incoming requests
     //
-    if (url.pathname === "/get-ips-only" && request.method === "GET") {
+    if (url.pathname === "/api/get-ips-only" && request.method === "GET") {
       console.log("Handling /get-ips-only");
       const ips = await fetchIPsonly();
       return new Response(JSON.stringify(ips), {
@@ -304,15 +304,25 @@ export default {
 
     // Handle fetch logs request
     if (url.pathname === "/api/fetch-logs" && request.method === "GET") {
-      //
       console.log("Handling /fetch-logs");
 
-      //
       const ips = await fetchIPsonly();
-      return new Response(JSON.stringify({ ips }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      const aiSuggestions = await fetchAISuggestions(ips); // 直接使用獲取的 IPs 餵給 AI
+
+      return new Response(
+        JSON.stringify({
+          ips,
+          aiSuggestions,
+          showAISuggestions: true,
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
     }
 
     // Handle update WAF request

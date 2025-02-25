@@ -39,6 +39,12 @@ interface WorkerResponse {
   aiSuggestions?: string;
 }
 
+interface LogResponse {
+  ips: string[];
+  aiSuggestions: string;
+  showAISuggestions: boolean;
+}
+
 export default function Home() {
   const [ips, setIps] = useState<string[]>([]);
   const [updating, setUpdating] = useState(false);
@@ -48,6 +54,8 @@ export default function Home() {
   const [allRecognizedIps, setAllRecognizedIps] = useState<string[]>([]);
   const [verifiedIpInfo, setVerifiedIpInfo] = useState<any[]>([]);
   const [verifiedAllIpsInfo, setVerifiedAllIpsInfo] = useState<any[]>([]);
+  const [isLoadingIPs, setIsLoadingIPs] = useState(false);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   // 添加一個 state 來存儲動態導入的 iplookupapi
   const [ipApi, setIpApi] = useState<any>(null);
@@ -92,9 +100,10 @@ export default function Home() {
     fetchLogs();
   }, []);
 
-  // 添加一個新的 useEffect 來獲取 IPs
+  // 獲取 IPs 的 useEffect
   useEffect(() => {
     const fetchIPsFromWorker = async () => {
+      setIsLoadingIPs(true);
       try {
         const response = await fetch("/api/get-ips-only");
         if (response.ok) {
@@ -106,11 +115,47 @@ export default function Home() {
         }
       } catch (error) {
         console.error("Error fetching IPs:", error);
+      } finally {
+        setIsLoadingIPs(false);
       }
     };
 
     fetchIPsFromWorker();
-  }, []); // 只在組件加載時執行一次
+  }, []);
+
+  // 獲取 Logs 的 useEffect (包含 IPs 和 AI 建議)
+  useEffect(() => {
+    const fetchLogsFromWorker = async () => {
+      setIsLoadingLogs(true);
+      try {
+        const response = await fetch("/api/fetch-logs");
+        if (response.ok) {
+          const data = (await response.json()) as LogResponse;
+
+          // 設置 IPs
+          setIps(data.ips || []);
+
+          // 設置 AI 建議
+          if (data.aiSuggestions) {
+            const suggestions = data.aiSuggestions.trim().split(/\n+/);
+            setAiSuggestions(suggestions);
+            console.log("AI Suggestions Received:", suggestions);
+          }
+
+          // 設置顯示狀態
+          setShowAISuggestions(data.showAISuggestions);
+        } else {
+          console.error("Failed to fetch logs:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching logs:", error);
+      } finally {
+        setIsLoadingLogs(false);
+      }
+    };
+
+    fetchLogsFromWorker();
+  }, []);
 
   // 修改 verifyIPs 函數來使用 route.ts 的 IP lookup endpoint
   const verifyIPs = async (validIps: string[]) => {
@@ -215,11 +260,19 @@ export default function Home() {
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
-        IP 資訊 - 過去一小時自動化程式可能性高之ip address
+        IP 資訊 - 過去30分鐘自動化程式可能性高之ip address
       </h3>
 
+      {/* 顯示載入狀態 */}
+      {(isLoadingIPs || isLoadingLogs) && (
+        <div className="flex items-center justify-center p-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+          <span className="ml-2 text-indigo-600">載入中...</span>
+        </div>
+      )}
+
       {/* 顯示從 Worker 獲取的 IPs */}
-      {ips.length > 0 && (
+      {!isLoadingIPs && ips.length > 0 && (
         <div className="mt-4 p-4 bg-white rounded-md shadow">
           <h4 className="text-xl font-semibold mb-2">有疑慮之 IPs:</h4>
           <ul className="space-y-1">
@@ -238,25 +291,15 @@ export default function Home() {
         </div>
       )}
 
-      {/* 顯示驗證結果 */}
-      {verifiedIpInfo.length > 0 && (
+      {/* 顯示 AI 建議 */}
+      {!isLoadingLogs && aiSuggestions.length > 0 && (
         <div className="mt-4 p-4 bg-white rounded-md shadow">
-          <h4 className="text-xl font-semibold mb-2">Verification Results:</h4>
-          <ul className="space-y-2">
-            {verifiedIpInfo.map((info, index) => (
-              <li key={index} className="text-sm">
-                <div className="font-medium">{info.ip}</div>
-                <div className="ml-4 text-gray-600">
-                  Location: {info.city}, {info.region}, {info.country}
-                </div>
-                {info.dns && (
-                  <div className="ml-4 text-gray-500 text-xs">
-                    DNS Info: {JSON.stringify(info.dns, null, 2)}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+          <h4 className="text-xl font-semibold mb-2">AI 建議:</h4>
+          {aiSuggestions.map((suggestion, index) => (
+            <p key={index} className="text-sm text-gray-700">
+              {suggestion}
+            </p>
+          ))}
         </div>
       )}
 
