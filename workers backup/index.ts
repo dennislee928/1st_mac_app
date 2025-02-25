@@ -14,7 +14,7 @@ var Block_RULE_ID = "f778bd84056045d2a867acfbe1231766";
 // Function to fetch IPs only
 async function fetchIPsonly() {
   const endTime = new Date();
-  const startTime = new Date(endTime - 1 * 60 * 1000); // 最近1分鐘
+  const startTime = new Date(endTime - 10 * 60 * 1000); // 最近1分鐘
 
   const graphqlQuery = {
     operationName: "GetSecuritySampledLogs",
@@ -89,7 +89,7 @@ __name(fetchIPsonly, "fetchIPsonly");
 
 async function fetchAISuggestions(ipArray) {
   try {
-    const prompt = `Analyze these security logs and provide professional security recommendations, act like experienced cloudflare consultant.The IPs are: ${ipArray} in the last 1 minutes with a BotScore less than 5 on Cloudflare. "`;
+    const prompt = `Analyze these security logs and provide professional security recommendations, act like experienced cloudflare consultant.The IPs are: ${ipArray} in the last 10 minutes with a BotScore less than 5 on Cloudflare. "`;
 
     const response = await fetch(
       "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct",
