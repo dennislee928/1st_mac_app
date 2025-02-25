@@ -260,6 +260,24 @@ export default function Home() {
     }
   };
 
+  // 在 return 之前添加 LoadingDots 組件
+  const LoadingDots = () => {
+    return (
+      <span className="loading-dots">
+        <span className="dot">.</span>
+        <span className="dot">.</span>
+        <span className="dot">.</span>
+      </span>
+    );
+  };
+
+  // 在 return 之前添加 LoadingSpinner 組件
+  const LoadingSpinner = () => {
+    return (
+      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2" />
+    );
+  };
+
   return (
     <div className="p-6 font-sans bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg shadow-lg">
       <h3 className="text-3xl font-extrabold mb-4 text-indigo-700">
@@ -320,8 +338,20 @@ export default function Home() {
       {/* 載入指示器 */}
       {(isLoadingIPs || isLoadingLogs) && (
         <div className="flex items-center justify-center p-4">
-          {isLoadingIPs && <span className="mr-2">IPs 載入中...</span>}
-          {isLoadingLogs && <span>AI Response 載入中...</span>}
+          {isLoadingIPs && (
+            <div className="flex items-center mr-4">
+              <LoadingSpinner />
+              <span>IPs 載入中</span>
+              <LoadingDots />
+            </div>
+          )}
+          {isLoadingLogs && (
+            <div className="flex items-center">
+              <LoadingSpinner />
+              <span>AI Response 載入中</span>
+              <LoadingDots />
+            </div>
+          )}
         </div>
       )}
 
@@ -364,6 +394,38 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* 在 return 後添加樣式 */}
+      <style jsx>{`
+        .loading-dots {
+          display: inline-block;
+        }
+
+        .dot {
+          animation: dotBounce 1.4s infinite;
+          display: inline-block;
+          margin: 0 2px;
+        }
+
+        .dot:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        .dot:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        @keyframes dotBounce {
+          0%,
+          80%,
+          100% {
+            transform: translateY(0);
+          }
+          40% {
+            transform: translateY(-4px);
+          }
+        }
+      `}</style>
     </div>
   );
 }
