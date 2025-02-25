@@ -7,19 +7,29 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/api/get-ips-only",
+        destination:
+          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/api/get-ips-only",
+      },
+      {
         source: "/api/fetch-logs",
         destination:
-          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/fetch-logs",
+          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/api/fetch-logs",
       },
       {
         source: "/api/update-waf",
         destination:
-          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/update-waf",
+          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/api/update-waf",
       },
       {
         source: "/api/fetch-ai-suggestions",
         destination:
-          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/fetch-ai-suggestions", // 這裡是 API 路由
+          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/api/fetch-ai-suggestions",
+      },
+      {
+        source: "/api/update-waf-blocking",
+        destination:
+          "https://botsrcautomation.twister5-partner-demo-account5604.workers.dev/api/update-waf-blocking",
       },
     ];
   },
