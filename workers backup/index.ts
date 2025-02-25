@@ -89,7 +89,7 @@ __name(fetchIPsonly, "fetchIPsonly");
 
 async function fetchAISuggestions(ipArray) {
   try {
-    const prompt = `Analyze these security logs and provide professional security recommendations, act like experienced cloudflare consultant.The IPs are: ${ipArray} in the last 10 minutes with a BotScore less than 5 on Cloudflare. "`;
+    const prompt = ` you are anexperienced cloudflare consultant.The IPs are: ${ipArray} in the last 10 minutes with a BotScore less than 5 on Cloudflare analyze these ips and provide professional security recommendations, "`;
 
     const response = await fetch(
       "https://api.cloudflare.com/client/v4/accounts/e1ab85903e4701fa311b5270c16665f6/ai/run/@cf/meta/llama-3-8b-instruct",
