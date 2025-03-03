@@ -334,40 +334,42 @@ export default function Home() {
     }
   };
 
-  const handleUpdateBlockMode = async (ips: string[]) => {
-    try {
-      setUpdatingBlock(true);
-      const ipChunks = splitIpsIntoChunks(ips);
+const handleUpdateBlockMode = async (ips: string[]) => {
+  try {
+    setUpdatingBlock(true);
 
-      for (let i = 0; i < ipChunks.length; i++) {
-        const response = await fetch("/api/update-waf-blocking", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ips: ipChunks[i],
-            ruleIndex: i, // 添加規則索引
-          }),
-        });
+    // 限制為前 20 個 IP
+    const limitedIps = ips.slice(0, 20);
+    console.log("發送的前 20 個 IP:", limitedIps);
 
-        if (!response.ok) {
-          throw new Error(`Block WAF update failed for chunk ${i + 1}`);
-        }
-      }
+    // 不分割成塊，直接發送前 20 個 IP
+    const response = await fetch("/api/update-waf-blocking", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ips: limitedIps, // 只傳遞前 20 個 IP
+      }),
+    });
 
-      alert(`已成功更新 WAF 規則，${ips.length} 個 IP 將被完全封鎖`);
-    } catch (error) {
-      console.error("Error updating Block WAF:", error);
-      alert(
-        `更新 WAF 封鎖規則失敗: ${
-          error instanceof Error ? error.message : "未知錯誤"
-        }`
-      );
-    } finally {
-      setUpdatingBlock(false);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`封鎖 WAF 更新失敗: ${response.status} - ${errorText}`);
     }
-  };
+
+    alert(`已成功更新 WAF 規則，前 ${limitedIps.length} 個 IP 將被完全封鎖`);
+  } catch (error) {
+    console.error("更新封鎖 WAF 時出錯:", error);
+    alert(
+      `更新 WAF 封鎖規則失敗: ${
+        error instanceof Error ? error.message : "未知錯誤"
+      }`
+    );
+  } finally {
+    setUpdatingBlock(false);
+  }
+};
 
   // 在 return 之前添加 LoadingDots 組件
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
