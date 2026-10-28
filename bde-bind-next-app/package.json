@@ -72,6 +72,7 @@
     "zod": "^4.6.6",
     "postcss-selector-parser": "^6.1.5",
     "@humanfs/node": "^0.16.8",
-    "ajv": "^8.18.0"
+    "ajv": "^8.18.0",
+    "esbuild": "^0.25.0"
   }
 }
