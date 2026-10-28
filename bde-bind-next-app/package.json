@@ -70,6 +70,7 @@
     "path-to-regexp": "^6.3.0",
     "source-map-js": "^1.2.2",
     "zod": "^4.6.6",
-    "postcss-selector-parser": "^6.1.5"
+    "postcss-selector-parser": "^6.1.5",
+    "@humanfs/node": "^0.16.8"
   }
 }
