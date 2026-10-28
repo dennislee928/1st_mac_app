@@ -61,6 +61,7 @@
     "minimatch": "^9.0.7",
     "nanoid": "^3.3.18",
     "sharp": "^0.35.5",
-    "@fastify/busboy": "^3.2.2"
+    "@fastify/busboy": "^3.2.2",
+    "flatted": "^3.4.2"
   }
 }
