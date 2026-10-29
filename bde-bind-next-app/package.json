@@ -78,6 +78,7 @@
     "yaml": "^2.8.3",
     "@eslint/plugin-kit": "^0.3.4",
     "@tootallnate/once": "^2.0.1",
-    "cookie": "^0.7.0"
+    "cookie": "^0.7.0",
+    "diff": "^4.0.4"
   }
 }
