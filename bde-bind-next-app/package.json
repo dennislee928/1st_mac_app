@@ -76,6 +76,7 @@
     "esbuild": "^0.25.0",
     "uuid": "^11.1.1",
     "yaml": "^2.8.3",
-    "@eslint/plugin-kit": "^0.3.4"
+    "@eslint/plugin-kit": "^0.3.4",
+    "@tootallnate/once": "^2.0.1"
   }
 }
